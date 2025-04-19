@@ -18,7 +18,9 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
   const mixerRef = useRef<THREE.AnimationMixer | null>(null);
   const clockRef = useRef<THREE.Clock | null>(null);
   const lastTimeRef = useRef<number>(0);
-  const isPausedRef = useRef<boolean>(true);
+  const isPausedRef = useRef<boolean>(false);
+  const observerRef = useRef<IntersectionObserver | null>(null);
+  const animationsRef = useRef<THREE.AnimationAction[]>([]);
   
   // Using refs to preserve these instances across renders
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -27,6 +29,34 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
   const controlsRef = useRef<OrbitControls | null>(null);
   const modelRef = useRef<THREE.Object3D | null>(null);
   const animationFrameIdRef = useRef<number | null>(null);
+
+  // Clean up animation resources
+  const cleanupAnimations = () => {
+    if (mixerRef.current) {
+      // Stop all actions
+      animationsRef.current.forEach(action => {
+        if (action) {
+          action.stop();
+        }
+      });
+      
+      // Clear the actions array
+      animationsRef.current = [];
+      
+      // Uncache all clips and remove references to free memory
+      if (mixerRef.current.getRoot()) {
+        mixerRef.current.uncacheRoot(mixerRef.current.getRoot());
+      }
+      
+      // Delete all event listeners by removing references
+      const mixer = mixerRef.current as any;
+      if (mixer._listeners) {
+        mixer._listeners = {};
+      }
+      
+      mixerRef.current = null;
+    }
+  };
 
   useEffect(() => {
     if (!mountRef.current) return;
@@ -117,22 +147,82 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
 
     window.addEventListener("resize", handleResize);
 
+    // Setup intersection observer to detect when component is visible
+    const setupIntersectionObserver = () => {
+      if (!mountRef.current) return;
+
+      observerRef.current = new IntersectionObserver(
+        (entries) => {
+          const [entry] = entries;
+          isPausedRef.current = !entry.isIntersecting;
+        },
+        { threshold: 0.1 } // Trigger when at least 10% of the component is visible
+      );
+
+      observerRef.current.observe(mountRef.current);
+    };
+
+    setupIntersectionObserver();
+
     // Cleanup function
     return () => {
       window.removeEventListener("resize", handleResize);
       if (animationFrameIdRef.current) {
         window.cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
       }
+      
+      // Clean up animations before removing the model
+      cleanupAnimations();
+      
       if (mountRef.current && rendererRef.current) {
         mountRef.current.removeChild(rendererRef.current.domElement);
       }
       
+      if (modelRef.current && sceneRef.current) {
+        // Properly dispose of the model and its geometries/materials
+        sceneRef.current.remove(modelRef.current);
+        modelRef.current.traverse((object) => {
+          if (object instanceof THREE.Mesh) {
+            if (object.geometry) {
+              object.geometry.dispose();
+            }
+            
+            if (object.material) {
+              if (Array.isArray(object.material)) {
+                object.material.forEach(material => material.dispose());
+              } else {
+                object.material.dispose();
+              }
+            }
+          }
+        });
+        modelRef.current = null;
+      }
+      
       if (sceneRef.current) {
         sceneRef.current.clear();
+        sceneRef.current = null;
+      }
+      
+      if (controlsRef.current) {
+        controlsRef.current.dispose();
+        controlsRef.current = null;
       }
       
       if (rendererRef.current) {
         rendererRef.current.dispose();
+        rendererRef.current = null;
+      }
+
+      if (observerRef.current && mountRef.current) {
+        observerRef.current.unobserve(mountRef.current);
+        observerRef.current.disconnect();
+        observerRef.current = null;
+      }
+      
+      if (clockRef.current) {
+        clockRef.current = null;
       }
     };
   }, []);
@@ -145,9 +235,30 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
     setLoadingProgress(0);
     setError(null);
 
+    // Clean up animations before removing the previous model
+    cleanupAnimations();
+
     // Remove previous model if exists
     if (modelRef.current && sceneRef.current) {
       sceneRef.current.remove(modelRef.current);
+      
+      // Dispose of geometries and materials
+      modelRef.current.traverse((object) => {
+        if (object instanceof THREE.Mesh) {
+          if (object.geometry) {
+            object.geometry.dispose();
+          }
+          
+          if (object.material) {
+            if (Array.isArray(object.material)) {
+              object.material.forEach(material => material.dispose());
+            } else {
+              object.material.dispose();
+            }
+          }
+        }
+      });
+      
       modelRef.current = null;
     }
 
@@ -183,21 +294,29 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
         // Set up animation mixer if animations exist
         if (gltf.animations && gltf.animations.length > 0) {
           mixerRef.current = new THREE.AnimationMixer(gltf.scene);
+          animationsRef.current = [];
           
-          // Play all animations starting at frame 500
+          // Play all animations starting at frame 400
           gltf.animations.forEach((clip) => {
             const action = mixerRef.current?.clipAction(clip);
             if (action) {
-              // Calculate time at frame 500 (assuming 24fps)
+              // Calculate time at frame 400 (assuming 24fps)
               const startTimeInSeconds = 400 / 24;
               // Set the animation to loop and restart from the specified frame
               action.setLoop(THREE.LoopRepeat, Infinity);
-              // Add an event listener to reset to frame 500 on each loop
+              // Add an event listener to reset to frame 400 on each loop
               mixerRef.current?.addEventListener('loop', () => {
-                mixerRef.current?.setTime(startTimeInSeconds);
+                if (mixerRef.current) {
+                  mixerRef.current.setTime(startTimeInSeconds);
+                }
               });
               action.play();
-              mixerRef.current?.setTime(startTimeInSeconds);
+              if (mixerRef.current) {
+                mixerRef.current.setTime(startTimeInSeconds);
+              }
+              
+              // Store reference to the action for cleanup
+              animationsRef.current.push(action);
             }
           });
         }
@@ -223,13 +342,21 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
     if (modelPath) {
       loadModel(modelPath);
     }
+    
+    // Clean up animations when the modelPath changes
+    return () => {
+      cleanupAnimations();
+    };
   }, [modelPath]);
 
-  // Interactive hover effects
+  // Interactive hover effects - only for showing help text now
   const handleMouseEnter = () => {
     setIsHovered(true);
     setShowHelp(true);
-    isPausedRef.current = false;
+    
+    if (controlsRef.current) {
+      controlsRef.current.autoRotateSpeed = 3.0;
+    }
     
     // Clear any existing timeout
     if (helpTimeoutRef.current) {
@@ -240,16 +367,11 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
     helpTimeoutRef.current = setTimeout(() => {
       setShowHelp(false);
     }, 1500);
-    
-    if (controlsRef.current) {
-      controlsRef.current.autoRotateSpeed = 3.0;
-    }
   };
 
   const handleMouseLeave = () => {
     setIsHovered(false);
     setShowHelp(false);
-    isPausedRef.current = true;
     
     // Clear the timeout when mouse leaves
     if (helpTimeoutRef.current) {
@@ -296,51 +418,6 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
         }
       }}
     >
-      {/* Interaction indicator overlay */}
-      {!isHovered && !isLoading && !error && (
-        <div style={{
-          position: "absolute",
-          top: 0,
-          left: 0,
-          width: "100%",
-          height: "100%",
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          backgroundColor: "rgba(0, 0, 0, 0.1)",
-          zIndex: 10,
-          opacity: 0.7,
-          transition: "opacity 0.3s ease",
-          pointerEvents: "none"
-        }}>
-          <div style={{
-            color: "rgba(204, 255, 0, 0.8)",
-            textAlign: "center",
-            border: "2px solid rgba(204, 255, 0, 0.4)",
-            borderRadius: "50%",
-            width: "50px",
-            height: "50px",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            backdropFilter: "blur(2px)",
-            boxShadow: "0 0 15px rgba(204, 255, 0, 0.3)",
-            animation: "pulse 2s infinite ease-in-out"
-          }}>
-            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="5 3 19 12 5 21 5 3"></polygon>
-            </svg>
-            <style>{`
-              @keyframes pulse {
-                0% { transform: scale(1); }
-                50% { transform: scale(1.1); }
-                100% { transform: scale(1); }
-              }
-            `}</style>
-          </div>
-        </div>
-      )}
-
       {/* Navigation help overlay */}
       {showHelp && (
         <div style={{
