@@ -1,0 +1,441 @@
+---
+import Layout from "@/layouts/Layout.astro";
+import LogoWall from "@/components/logoWall.astro";
+---
+
+<Layout title="Project Documentation">
+  <section class="text-[var(--white)] mt-12 md:mt-0" id="docs">
+    <div class="max-w-5xl mx-auto space-y-8 md:py-36 pb-14 relative">
+      <div class="text-left space-y-4">
+        <a href="/" class="hidden md:inline-block mb-2" id="home-icon" aria-label="Home">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M21 20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.48907C3 9.18048 3.14247 8.88917 3.38606 8.69972L11.3861 2.47749C11.7472 2.19663 12.2528 2.19663 12.6139 2.47749L20.6139 8.69972C20.8575 8.88917 21 9.18048 21 9.48907V20ZM19 19V9.97815L12 4.53371L5 9.97815V19H19Z"></path></svg>
+        </a>
+        <h1 class="text-5xl md:text-6xl font-medium text-pretty leading-none mb-4">
+          Project Documentation
+        </h1>
+        <p class="text-md md:text-2xl text-[var(--white-icon)]">
+          Welcome to the documentation page. Here you can find guides, references, and resources for this project.
+        </p>
+      </div>
+      <!-- Getting Started Box with Section Links -->
+      <div id="getting-started-box" class="mt-8 bg-[#1414149c] rounded-xl p-8 border border-[var(--white-icon-tr)] transition-all duration-300">
+        <h2 class="text-2xl font-semibold mb-4 shiny-sec">Getting Started</h2>
+        <ul id="section-links" class="list-disc pl-6 text-lg space-y-2">
+          <li><a href="#introduction" class="section-link text-[var(--white)] hover:underline">Section 1: Introduction</a></li>
+          <li><a href="#installation" class="section-link text-[var(--white)] hover:underline">Section 2: Installation</a></li>
+          <li><a href="#usage" class="section-link text-[var(--white)] hover:underline">Section 3: Usage</a></li>
+          <li><a href="#api-reference" class="section-link text-[var(--white)] hover:underline">Section 4: API Reference</a></li>
+        </ul>
+      </div>
+      <!-- Side Panel Navigation (hidden by default) -->
+      <nav id="side-panel" class="fixed top-24 left-8 z-30 bg-[#141414e6] border border-[var(--white-icon-tr)] rounded-xl p-6 shadow-lg transition-all duration-500 opacity-0 -translate-x-8 pointer-events-none md:block" style="backdrop-filter: blur(8px);">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xl font-semibold shiny-sec mb-0">Sections</h2>
+          <a href="/" class="hidden md:inline-flex items-center justify-center ml-3" id="home-icon" aria-label="Home">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="28" height="28" fill="currentColor"><path d="M21 20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.48907C3 9.18048 3.14247 8.88917 3.38606 8.69972L11.3861 2.47749C11.7472 2.19663 12.2528 2.19663 12.6139 2.47749L20.6139 8.69972C20.8575 8.88917 21 9.18048 21 9.48907V20ZM19 19V9.97815L12 4.53371L5 9.97815V19H19Z"></path></svg>
+          </a>
+        </div>
+        <ul class="space-y-3">
+          <li><a href="#introduction" class="section-link text-[var(--white)] hover:underline">Introduction</a></li>
+          <li><a href="#installation" class="section-link text-[var(--white)] hover:underline">Installation</a></li>
+          <li><a href="#usage" class="section-link text-[var(--white)] hover:underline">Usage</a></li>
+          <li><a href="#api-reference" class="section-link text-[var(--white)] hover:underline">API Reference</a></li>
+        </ul>
+      </nav>
+      <!-- Mobile Top-Right Dropdown Navigation (hidden by default) -->
+      <div id="mobile-dropdown-nav" class="fixed top-4 right-4 z-50 md:hidden" style="display: none;">
+        <button id="dropdown-toggle" aria-label="Show sections" class="bg-[#141414e6] border border-[var(--white-icon-tr)] rounded-full p-3 shadow-lg flex items-center justify-center transition-all duration-300 focus:outline-none">
+          <span class="line line1"></span>
+          <span class="line line2"></span>
+        </button>
+        <div id="dropdown-menu" class="absolute right-0 mt-2 w-48 bg-[#141414f2] border border-[var(--white-icon-tr)] rounded-xl shadow-xl overflow-hidden opacity-0 pointer-events-none transform -translate-y-2 transition-all duration-300">
+          <ul class="py-2">
+            <li><a href="/" class="block px-6 py-3 text-[var(--white)] hover:bg-[#222] flex items-center gap-2"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="20" height="20" fill="currentColor" class="h-5 w-5 text-[var(--white-icon)]"><path d="M21 20C21 20.5523 20.5523 21 20 21H4C3.44772 21 3 20.5523 3 20V9.48907C3 9.18048 3.14247 8.88917 3.38606 8.69972L11.3861 2.47749C11.7472 2.19663 12.2528 2.19663 12.6139 2.47749L20.6139 8.69972C20.8575 8.88917 21 9.18048 21 9.48907V20ZM19 19V9.97815L12 4.53371L5 9.97815V19H19Z"></path></svg>Home</a></li>
+            <li><a href="#introduction" class="block px-6 py-3 text-[var(--white)] hover:bg-[#222] section-link">Introduction</a></li>
+            <li><a href="#installation" class="block px-6 py-3 text-[var(--white)] hover:bg-[#222] section-link">Installation</a></li>
+            <li><a href="#usage" class="block px-6 py-3 text-[var(--white)] hover:bg-[#222] section-link">Usage</a></li>
+            <li><a href="#api-reference" class="block px-6 py-3 text-[var(--white)] hover:bg-[#222] section-link">API Reference</a></li>
+          </ul>
+        </div>
+      </div>
+      <!-- Mobile Sticky Navigation -->
+      <nav id="mobile-nav" class="fixed bottom-0 left-0 w-full z-40 bg-[#141414f2] border-t border-[var(--white-icon-tr)] flex justify-around items-center py-2 md:hidden" style="backdrop-filter: blur(8px);">
+        <a href="#introduction" class="section-link flex-1 text-center py-2 text-[var(--white)] text-xs"><span>Intro</span></a>
+        <a href="#installation" class="section-link flex-1 text-center py-2 text-[var(--white)] text-xs"><span>Install</span></a>
+        <a href="#usage" class="section-link flex-1 text-center py-2 text-[var(--white)] text-xs"><span>Usage</span></a>
+        <a href="#api-reference" class="section-link flex-1 text-center py-2 text-[var(--white)] text-xs"><span>API</span></a>
+      </nav>
+      <!-- Documentation Sections -->
+      <div class="mt-20 space-y-24">
+        <section id="introduction">
+          <h2 class="text-3xl font-bold mb-4 shiny-sec">Introduction</h2>
+          <p class="text-lg text-[var(--white-icon)]">This section introduces the project, its goals, and what you can expect to find in this documentation. Use this space to provide a high-level overview and context for your users.</p>
+        </section>
+        <section id="installation">
+          <h2 class="text-3xl font-bold mb-4 shiny-sec">Installation</h2>
+          <p class="text-lg text-[var(--white-icon)]">Step-by-step instructions for installing and setting up the project. Include prerequisites, dependencies, and any platform-specific notes to help users get started quickly.</p>
+        </section>
+        <section id="usage">
+          <h2 class="text-3xl font-bold mb-4 shiny-sec">Usage</h2>
+          <p class="text-lg text-[var(--white-icon)]">Explain how to use the project after installation. Provide code examples, screenshots, or walkthroughs to demonstrate typical workflows and features.</p>
+        </section>
+        <section id="api-reference">
+          <h2 class="text-3xl font-bold mb-4 shiny-sec">API Reference</h2>
+          <p class="text-lg text-[var(--white-icon)]">Document the project's API, commands, or configuration options. Use tables, code blocks, and detailed descriptions to make this section a helpful resource for developers.</p>
+        </section>
+      </div>
+    </div>
+    <script is:inline>
+      // Dynamic side-panel behavior
+      document.addEventListener('DOMContentLoaded', () => {
+        const gettingStartedBox = document.getElementById('getting-started-box');
+        const sidePanel = document.getElementById('side-panel');
+        const mobileDropdownNav = document.getElementById('mobile-dropdown-nav');
+        const dropdownToggle = document.getElementById('dropdown-toggle');
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        let dropdownOpen = false;
+        let boxBottom = 0;
+        let lastMobileNavVisible = false;
+        let lastDropdownToggleVisible = false;
+        // Store references to event handlers for cleanup
+        function animateDropdown(show) {
+          if (!dropdownMenu) return;
+          dropdownMenu.style.willChange = 'opacity, transform';
+          dropdownMenu.style.transition = 'opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1)';
+          if (show) {
+            dropdownMenu.classList.add('show');
+            dropdownMenu.style.opacity = '1';
+            dropdownMenu.style.pointerEvents = 'auto';
+            dropdownMenu.style.transform = 'translateY(0) scale(1)';
+          } else {
+            dropdownMenu.classList.remove('show');
+            dropdownMenu.style.opacity = '0';
+            dropdownMenu.style.pointerEvents = 'none';
+            dropdownMenu.style.transform = 'translateY(-12px) scale(0.98)';
+          }
+        }
+        function animateDropdownToggle(show) {
+          if (!dropdownToggle) return;
+          dropdownToggle.style.willChange = 'opacity, transform';
+          dropdownToggle.style.transition = 'opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1)';
+          if (show) {
+            dropdownToggle.style.opacity = '1';
+            dropdownToggle.style.pointerEvents = 'auto';
+            dropdownToggle.style.transform = 'translateY(0) scale(1)';
+          } else {
+            dropdownToggle.style.opacity = '0';
+            dropdownToggle.style.pointerEvents = 'none';
+            dropdownToggle.style.transform = 'translateY(-12px) scale(0.98)';
+          }
+        }
+        function updatePanel() {
+          const rect = gettingStartedBox.getBoundingClientRect();
+          boxBottom = rect.bottom + window.scrollY;
+          const shouldShowMobileNav = window.scrollY + 80 > boxBottom && window.innerWidth <= 900;
+          if (window.scrollY + 80 > boxBottom) {
+            sidePanel.classList.add('visible');
+            gettingStartedBox.style.opacity = '0';
+            gettingStartedBox.style.pointerEvents = 'none';
+            // Show mobile dropdown nav if on mobile
+            if (shouldShowMobileNav && mobileDropdownNav) {
+              if (!lastMobileNavVisible) {
+                mobileDropdownNav.style.display = 'block';
+                mobileDropdownNav.style.opacity = '0';
+                mobileDropdownNav.style.transform = 'translateY(-8px)';
+                requestAnimationFrame(() => {
+                  mobileDropdownNav.style.transition = 'opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1)';
+                  mobileDropdownNav.style.opacity = '1';
+                  mobileDropdownNav.style.transform = 'translateY(0)';
+                });
+                lastMobileNavVisible = true;
+              }
+              if (!lastDropdownToggleVisible) {
+                dropdownToggle.style.display = 'flex';
+                dropdownToggle.style.opacity = '0';
+                dropdownToggle.style.transform = 'translateY(-12px) scale(0.98)';
+                requestAnimationFrame(() => {
+                  animateDropdownToggle(true);
+                });
+                lastDropdownToggleVisible = true;
+              }
+            }
+          } else {
+            sidePanel.classList.remove('visible');
+            gettingStartedBox.style.opacity = '1';
+            gettingStartedBox.style.pointerEvents = 'auto';
+            if (mobileDropdownNav && lastMobileNavVisible) {
+              mobileDropdownNav.style.transition = 'opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1)';
+              mobileDropdownNav.style.opacity = '0';
+              mobileDropdownNav.style.transform = 'translateY(-8px)';
+              setTimeout(() => {
+                mobileDropdownNav.style.display = 'none';
+              }, 450);
+              animateDropdown(false);
+              lastMobileNavVisible = false;
+              if (dropdownToggle) dropdownToggle.classList.remove('open');
+            }
+            if (dropdownToggle && lastDropdownToggleVisible) {
+              animateDropdownToggle(false);
+              setTimeout(() => {
+                dropdownToggle.style.display = 'none';
+              }, 450);
+              lastDropdownToggleVisible = false;
+            }
+          }
+        }
+        // Store handler references for cleanup
+        const scrollHandler = updatePanel;
+        const resizeHandler = updatePanel;
+        window.addEventListener('scroll', scrollHandler);
+        window.addEventListener('resize', resizeHandler);
+        updatePanel();
+
+        // Dropdown toggle logic
+        let dropdownClickHandler, documentClickHandler;
+        if (dropdownToggle && dropdownMenu) {
+          dropdownClickHandler = (e) => {
+            e.stopPropagation();
+            dropdownOpen = !dropdownOpen;
+            dropdownToggle.classList.toggle('open', dropdownOpen);
+            animateDropdown(dropdownOpen);
+          };
+          dropdownToggle.addEventListener('click', dropdownClickHandler);
+          documentClickHandler = (e) => {
+            if (dropdownOpen && !dropdownMenu.contains(e.target) && !dropdownToggle.contains(e.target)) {
+              dropdownOpen = false;
+              dropdownToggle.classList.remove('open');
+              animateDropdown(false);
+            }
+          };
+          document.addEventListener('click', documentClickHandler);
+        }
+
+        // Handle page visibility to pause/resume background processes
+        document.addEventListener('visibilitychange', () => {
+          if (document.hidden) {
+            // Page is hidden: pause animations, intervals, or background work here if needed
+            // Example: window.clearInterval(myInterval)
+          } else {
+            // Page is visible again: resume work if needed
+            // Example: myInterval = setInterval(...)
+          }
+        });
+
+        // Clean up event listeners when navigating away or hot reloading (Astro static pages rarely need this, but for hydration or future-proofing)
+        window.addEventListener('astro:beforeunload', () => {
+          window.removeEventListener('scroll', scrollHandler);
+          window.removeEventListener('resize', resizeHandler);
+          if (dropdownToggle && dropdownClickHandler) {
+            dropdownToggle.removeEventListener('click', dropdownClickHandler);
+          }
+          if (documentClickHandler) {
+            document.removeEventListener('click', documentClickHandler);
+          }
+          // Remove visibilitychange if needed (not strictly necessary)
+          // document.removeEventListener('visibilitychange', ...)
+        });
+      });
+    </script>
+  </section>
+  <style is:global>
+    .shiny-sec {
+      background: linear-gradient(135deg, #CCFF00 25%, #EEFFCC 50%, #CCFF00 75%);
+      background-size: 400% 100%;
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+      animation: shine 3s linear infinite;
+    }
+    @keyframes shine {
+      0% { background-position: 100% 50%; }
+      30%, 70% { background-position: 0% 50%; }
+    }
+    #side-panel {
+      min-width: 220px;
+      max-width: 260px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateX(-32px);
+      transition: opacity 0.5s cubic-bezier(0.4,0,0.2,1), transform 0.5s cubic-bezier(0.4,0,0.2,1);
+      box-shadow: 0 8px 32px 0 rgba(0,0,0,0.25);
+      backdrop-filter: blur(8px);
+    }
+    #side-panel.visible {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateX(0);
+    }
+    @media (max-width: 900px) {
+      #side-panel {
+        display: none !important;
+      }
+      #mobile-dropdown-nav {
+        display: none;
+      }
+      #mobile-nav {
+        display: flex;
+      }
+      .max-w-5xl {
+        padding-left: 0.25rem;
+        padding-right: 0.25rem;
+      }
+      .text-5xl, .md\:text-6xl {
+        font-size: 2rem !important;
+      }
+      .text-2xl, .md\:text-2xl {
+        font-size: 1.1rem !important;
+      }
+      .text-3xl {
+        font-size: 1.3rem !important;
+      }
+      .text-lg {
+        font-size: 1rem !important;
+      }
+      .mt-20 {
+        margin-top: 2rem !important;
+      }
+      .space-y-24 > :not([hidden]) ~ :not([hidden]) {
+        --tw-space-y-reverse: 0;
+        margin-top: calc(2rem * calc(1 - var(--tw-space-y-reverse)));
+        margin-bottom: calc(2rem * var(--tw-space-y-reverse));
+      }
+      #getting-started-box {
+        padding: 1.25rem;
+      }
+      .rounded-xl {
+        border-radius: 0.75rem;
+      }
+      .p-8 {
+        padding: 1.25rem !important;
+      }
+      .md\:py-36 {
+        padding-top: 2rem !important;
+        padding-bottom: 2rem !important;
+      }
+    }
+    @media (min-width: 901px) {
+      #mobile-nav {
+        display: none !important;
+      }
+    }
+    html {
+      scroll-behavior: smooth;
+    }
+    .section-link {
+      transition: color 0.2s;
+    }
+    .section-link.active {
+      color: #CCFF00;
+      font-weight: bold;
+      text-decoration: underline;
+    }
+    #mobile-nav {
+      display: none;
+      border-top: 1px solid var(--white-icon-tr);
+      box-shadow: 0 -2px 16px 0 rgba(0,0,0,0.15);
+    }
+    #mobile-dropdown-nav {
+      transition: opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1);
+      opacity: 0;
+      transform: translateY(-8px);
+    }
+    #mobile-dropdown-nav[style*="display: block"] {
+      opacity: 1;
+      transform: translateY(0);
+    }
+    #dropdown-toggle {
+      position: relative;
+      width: 44px;
+      height: 44px;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.01);
+      border: 1.5px solid var(--white-icon-tr);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+      transition: box-shadow 0.2s;
+      overflow: hidden;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-12px) scale(0.98);
+      backdrop-filter: blur(18px) brightness(1.15);
+      -webkit-backdrop-filter: blur(18px) brightness(1.15);
+    }
+    #dropdown-toggle .line {
+      position: absolute;
+      left: 10px;
+      right: 10px;
+      height: 3px;
+      border-radius: 2px;
+      background: var(--white, #fff);
+      transition: transform 0.35s cubic-bezier(.68,-0.55,.27,1.55), opacity 0.25s;
+      display: block;
+    }
+    #dropdown-toggle .line1 {
+      top: 50%;
+      transform: translateY(-5px);
+    }
+    #dropdown-toggle .line2 {
+      top: 50%;
+      transform: translateY(2px);
+    }
+    #dropdown-toggle.open .line1 {
+      transform: rotate(45deg);
+    }
+    #dropdown-toggle.open .line2 {
+      transform: rotate(-45deg);
+    }
+    #dropdown-menu {
+      min-width: 180px;
+      opacity: 0;
+      pointer-events: none;
+      transform: translateY(-12px) scale(0.98);
+      transition: opacity 0.45s cubic-bezier(0.4,0,0.2,1), transform 0.45s cubic-bezier(0.4,0,0.2,1);
+      backdrop-filter: blur(18px) brightness(1.15);
+      -webkit-backdrop-filter: blur(18px) brightness(1.15);
+      background: rgba(255,255,255,0.01);
+      box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.18);
+      border: 1.5px solid var(--white-icon-tr);
+    }
+    #dropdown-menu.show {
+      opacity: 1;
+      pointer-events: auto;
+      transform: translateY(0) scale(1);
+    }
+    #dropdown-menu ul {
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+    #dropdown-menu a {
+      transition: background 0.2s, color 0.2s;
+      border-radius: 0.5rem;
+    }
+    #dropdown-menu a:active {
+      background: #1a1a1a;
+      color: #CCFF00;
+    }
+    #home-icon {
+      background: transparent;
+      border-radius: 9999px;
+      padding: 0.5rem;
+      transition: background 0.2s, box-shadow 0.2s;
+      box-shadow: none;
+      opacity: 0.85;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #home-icon:hover {
+      background: #2228;
+      box-shadow: 0 2px 8px 0 rgba(0,0,0,0.10);
+      opacity: 1;
+    }
+    #home-icon svg {
+      display: block;
+      height: 1.5rem;
+      width: 1.5rem;
+      color: var(--white-icon, #eee);
+    }
+  </style>
+</Layout> 
