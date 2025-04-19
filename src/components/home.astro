@@ -114,15 +114,17 @@ import SkillsList from "../React/SkillsList.tsx";
               text3d.style.textShadow = 'none';
               text3d.style.filter = 'none';
             } else {
-              // Update shadow based on rotation
-              const shadowX = currentRotY / 3;
-              const shadowY = -currentRotX / 3;
-              const shadowBlur = 4 + currentZOffset / 3;
-              const shadowOpacity = 0.15 + (currentZOffset / 20) * 0.3;
+              // Update shadow based on rotation (with constraints)
+              // Limit shadow offset to a maximum of 5px to keep glow close to text
+              const maxShadowOffset = 5;
+              const shadowX = Math.max(-maxShadowOffset, Math.min(maxShadowOffset, currentRotY / 3));
+              const shadowY = Math.max(-maxShadowOffset, Math.min(maxShadowOffset, -currentRotX / 3));
+              const shadowBlur = 4 + Math.min(6, currentZOffset / 3);
+              const shadowOpacity = 0.15 + Math.min(0.3, (currentZOffset / 20) * 0.3);
               
               text3d.style.textShadow = `
                 ${-shadowX}px ${-shadowY}px ${shadowBlur}px rgba(204, 255, 0, ${shadowOpacity}),
-                ${-shadowX * 2}px ${-shadowY * 2}px ${shadowBlur * 1.5}px rgba(204, 255, 0, ${shadowOpacity / 3}),
+                ${-shadowX * 1.5}px ${-shadowY * 1.5}px ${shadowBlur * 1.5}px rgba(204, 255, 0, ${shadowOpacity / 3}),
                 0 0 1px rgba(252, 255, 242, 0.3)
               `;
               text3d.style.filter = 'drop-shadow(0 0 0.5px rgba(204, 255, 0, 0.7))';
