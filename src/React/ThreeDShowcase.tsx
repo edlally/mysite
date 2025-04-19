@@ -21,6 +21,7 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
   const isPausedRef = useRef<boolean>(false);
   const observerRef = useRef<IntersectionObserver | null>(null);
   const animationsRef = useRef<THREE.AnimationAction[]>([]);
+  const [isVisible, setIsVisible] = useState(true);
   
   // Using refs to preserve these instances across renders
   const rendererRef = useRef<THREE.WebGLRenderer | null>(null);
@@ -39,21 +40,19 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
           action.stop();
         }
       });
-      
+      // Stop all actions in the mixer
+      mixerRef.current.stopAllAction();
       // Clear the actions array
       animationsRef.current = [];
-      
       // Uncache all clips and remove references to free memory
       if (mixerRef.current.getRoot()) {
         mixerRef.current.uncacheRoot(mixerRef.current.getRoot());
       }
-      
       // Delete all event listeners by removing references
       const mixer = mixerRef.current as any;
       if (mixer._listeners) {
         mixer._listeners = {};
       }
-      
       mixerRef.current = null;
     }
   };
@@ -79,8 +78,9 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
     // Renderer setup
     const renderer = new THREE.WebGLRenderer({ antialias: true });
     renderer.setSize(mountRef.current.clientWidth, mountRef.current.clientHeight);
-    renderer.setPixelRatio(window.devicePixelRatio);
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
     renderer.outputColorSpace = THREE.SRGBColorSpace;
+    renderer.shadowMap.enabled = false;
     mountRef.current.appendChild(renderer.domElement);
     rendererRef.current = renderer;
 
@@ -111,26 +111,23 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
 
     // Animation loop
     const animate = () => {
+      if (!isVisible) return;
       if (controlsRef.current) {
         // Only update controls (auto-rotation) when not paused
         if (!isPausedRef.current) {
           controlsRef.current.update();
         }
       }
-      
       // Update animations mixer if exists and not paused
       if (mixerRef.current && clockRef.current && !isPausedRef.current) {
         mixerRef.current.update(clockRef.current.getDelta());
       } else if (clockRef.current && isPausedRef.current) {
         // If paused, we still need to update the clock's delta without using it
-        // This prevents a big jump in animation when resuming
         clockRef.current.getDelta();
       }
-      
       if (rendererRef.current && sceneRef.current && cameraRef.current) {
         rendererRef.current.render(sceneRef.current, cameraRef.current);
       }
-      
       animationFrameIdRef.current = window.requestAnimationFrame(animate);
     };
     
@@ -150,19 +147,36 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
     // Setup intersection observer to detect when component is visible
     const setupIntersectionObserver = () => {
       if (!mountRef.current) return;
-
       observerRef.current = new IntersectionObserver(
         (entries) => {
           const [entry] = entries;
           isPausedRef.current = !entry.isIntersecting;
+          setIsVisible(entry.isIntersecting);
+          if (entry.isIntersecting && !animationFrameIdRef.current) {
+            animate();
+          } else if (!entry.isIntersecting && animationFrameIdRef.current) {
+            window.cancelAnimationFrame(animationFrameIdRef.current);
+            animationFrameIdRef.current = null;
+          }
         },
-        { threshold: 0.1 } // Trigger when at least 10% of the component is visible
+        { threshold: 0.1 }
       );
-
       observerRef.current.observe(mountRef.current);
     };
 
     setupIntersectionObserver();
+
+    let isTabVisible = true;
+    const handleVisibilityChange = () => {
+      isTabVisible = !document.hidden;
+      if (!isTabVisible && animationFrameIdRef.current) {
+        window.cancelAnimationFrame(animationFrameIdRef.current);
+        animationFrameIdRef.current = null;
+      } else if (isTabVisible && isVisible && !animationFrameIdRef.current) {
+        animate();
+      }
+    };
+    document.addEventListener('visibilitychange', handleVisibilityChange);
 
     // Cleanup function
     return () => {
@@ -177,6 +191,7 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
       
       if (mountRef.current && rendererRef.current) {
         mountRef.current.removeChild(rendererRef.current.domElement);
+        rendererRef.current.forceContextLoss && rendererRef.current.forceContextLoss();
       }
       
       if (modelRef.current && sceneRef.current) {
@@ -200,11 +215,6 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
         modelRef.current = null;
       }
       
-      if (sceneRef.current) {
-        sceneRef.current.clear();
-        sceneRef.current = null;
-      }
-      
       if (controlsRef.current) {
         controlsRef.current.dispose();
         controlsRef.current = null;
@@ -224,6 +234,8 @@ const ThreeDShowcase = ({ modelPath }: ThreeDShowcaseProps) => {
       if (clockRef.current) {
         clockRef.current = null;
       }
+
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 

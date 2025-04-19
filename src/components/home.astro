@@ -1,5 +1,4 @@
 ---
-import LetterGlitch from "../React/LetterGlitch.tsx";
 import ThreeDShowcase from "../React/ThreeDShowcase.tsx";
 import LogoWall from "../components/logoWall.astro";
 import SkillsList from "../React/SkillsList.tsx";
@@ -47,8 +46,13 @@ import SkillsList from "../React/SkillsList.tsx";
       
       <script is:inline>
         document.addEventListener('DOMContentLoaded', () => {
+          // Prevent multiple initializations
+          if (window.__home3d_initialized) return;
+          window.__home3d_initialized = true;
+
           const container = document.getElementById('title-container');
           const text3d = document.getElementById('text-3d');
+          if (!container || !text3d) return;
           
           // Current values for smooth animation
           let currentRotX = 0;
@@ -75,8 +79,20 @@ import SkillsList from "../React/SkillsList.tsx";
           
           // Spring-like animation loop
           let animationFrameId = null;
+          let isTabVisible = true;
+          function handleVisibilityChange() {
+            isTabVisible = !document.hidden;
+            if (!isTabVisible && animationFrameId) {
+              cancelAnimationFrame(animationFrameId);
+              animationFrameId = null;
+            } else if (isTabVisible && !animationFrameId) {
+              animationFrameId = requestAnimationFrame(updateAnimation);
+            }
+          }
+          document.addEventListener('visibilitychange', handleVisibilityChange);
           
           function updateAnimation() {
+            if (!isTabVisible) return;
             if (isSpinning) {
               // Apply spinning with damping
               spinVelocityX *= dampingFactor;
@@ -224,15 +240,25 @@ import SkillsList from "../React/SkillsList.tsx";
           
           // Add dragging events to container (instead of just the 3D text)
           container.addEventListener('mousedown', onDragStart);
-          
-          // Clean up on page unload
-          window.addEventListener('beforeunload', () => {
+
+          // --- Cleanup function for all listeners and animation frames ---
+          const cleanup = () => {
             if (animationFrameId) {
               cancelAnimationFrame(animationFrameId);
+              animationFrameId = null;
             }
+            container.removeEventListener('mousemove', onMouseMove);
+            container.removeEventListener('mouseleave', onMouseLeave);
+            container.removeEventListener('mousedown', onDragStart);
             document.removeEventListener('mousemove', onDrag);
             document.removeEventListener('mouseup', onDragEnd);
-          });
+            document.removeEventListener('visibilitychange', handleVisibilityChange);
+            window.removeEventListener('beforeunload', cleanup);
+            window.__home3d_initialized = false;
+          };
+
+          // Clean up on page unload or navigation
+          window.addEventListener('beforeunload', cleanup);
         });
       </script>
       
