@@ -1,5 +1,6 @@
 ---
 import LetterGlitch from "../React/LetterGlitch.tsx";
+import ThreeDShowcase from "../React/ThreeDShowcase.tsx";
 import LogoWall from "../components/logoWall.astro";
 import SkillsList from "../React/SkillsList.tsx";
 ---
@@ -8,29 +9,237 @@ import SkillsList from "../React/SkillsList.tsx";
   <div class="max-w-5xl mx-auto space-y-8 md:py-36 pb-14">
     <div class="text-left space-y-4">
       <p class="text-md md:text-lg text-[var(--white-icon)] shiny-white">
-        Hi, I'm Oscar Hernandez
+        Hi, I'm Ed Lally.
       </p>
-      <div
-        class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 md:gap-4"
+      <div 
+        id="title-container" 
+        class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 md:gap-4 perspective-[800px] cursor-grab"
       >
-        <h1
-          class="text-[var(--white)] text-5xl md:text-6xl font-medium text-pretty leading-none"
-        >
-          Software <br /> Developer
+        <h1 class="text-[var(--white)] text-5xl md:text-6xl font-medium text-pretty leading-none">
+          <span class="md:hidden">Blender</span>
+          <span class="hidden md:inline">Blender</span>
+          <span
+            id="text-3d"
+            class="inline-block"
+            style="
+              --rX: 0deg;
+              --rY: 0deg;
+              --z-offset: 0px;
+              transform: perspective(600px) rotateX(var(--rX)) rotateY(var(--rY)) translateZ(var(--z-offset));
+              transform-style: preserve-3d;
+              transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
+              text-shadow: none;
+              color: var(--white);
+              letter-spacing: 0.03em;
+              -webkit-text-stroke: 1px rgba(252, 255, 242, 0.5);
+              filter: none;
+            "
+          >
+            3D
+          </span><br class="md:hidden"/>
+          Artist & Developer
         </h1>
         <p class="text-md md:text-2xl text-[var(--white-icon)]">
-          Transforming ideas into interactive and seamless digital experiences
-          with cutting-edge <span class="text-[var(--sec)] shiny-sec"
-            >frontend</span
-          > development.
+          Creating powerful visual experiences using technical Blender workflows and Python scripting.
+          <span class="text-[var(--sec)] shiny-sec">Epicly.</span>
         </p>
       </div>
+      
+      <script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+          const container = document.getElementById('title-container');
+          const text3d = document.getElementById('text-3d');
+          
+          // Current values for smooth animation
+          let currentRotX = 0;
+          let currentRotY = 0;
+          let currentZOffset = 0;
+          let targetRotX = 0;
+          let targetRotY = 0;
+          let targetZOffset = 0;
+
+          // For dragging and spinning
+          let isDragging = false;
+          let isSpinning = false;
+          let dragStartX = 0;
+          let dragStartY = 0;
+          let spinVelocityX = 0;
+          let spinVelocityY = 0;
+          let lastMouseX = 0;
+          let lastMouseY = 0;
+          let dampingFactor = 0.95; // Controls how quickly spinning slows down
+          
+          // Animation settings
+          const springStrength = 0.13; // Higher value = faster snap (0-1)
+          const returnSpringStrength = 0.06; // Return speed
+          
+          // Spring-like animation loop
+          let animationFrameId = null;
+          
+          function updateAnimation() {
+            if (isSpinning) {
+              // Apply spinning with damping
+              spinVelocityX *= dampingFactor;
+              spinVelocityY *= dampingFactor;
+              
+              // Stop spinning when velocity becomes very small
+              if (Math.abs(spinVelocityX) < 0.01 && Math.abs(spinVelocityY) < 0.01) {
+                isSpinning = false;
+              } else {
+                targetRotX += spinVelocityY;
+                targetRotY += spinVelocityX;
+              }
+            }
+            
+            // Calculate spring force
+            let diffX = targetRotX - currentRotX;
+            let diffY = targetRotY - currentRotY;
+            let diffZ = targetZOffset - currentZOffset;
+            
+            // Apply spring physics (smooth follow)
+            const strength = container.matches(':hover') || isDragging ? springStrength : returnSpringStrength;
+            currentRotX += diffX * strength;
+            currentRotY += diffY * strength;
+            currentZOffset += diffZ * strength;
+            
+            // Update element transform
+            text3d.style.setProperty('--rX', `${currentRotX.toFixed(2)}deg`);
+            text3d.style.setProperty('--rY', `${currentRotY.toFixed(2)}deg`);
+            text3d.style.setProperty('--z-offset', `${currentZOffset.toFixed(2)}px`);
+            
+            // Only apply glow when not in base position
+            const isAtBasePosition = Math.abs(currentRotX) < 0.1 && Math.abs(currentRotY) < 0.1;
+            
+            if (isAtBasePosition) {
+              text3d.style.textShadow = 'none';
+              text3d.style.filter = 'none';
+            } else {
+              // Update shadow based on rotation
+              const shadowX = currentRotY / 3;
+              const shadowY = -currentRotX / 3;
+              const shadowBlur = 4 + currentZOffset / 3;
+              const shadowOpacity = 0.15 + (currentZOffset / 20) * 0.3;
+              
+              text3d.style.textShadow = `
+                ${-shadowX}px ${-shadowY}px ${shadowBlur}px rgba(204, 255, 0, ${shadowOpacity}),
+                ${-shadowX * 2}px ${-shadowY * 2}px ${shadowBlur * 1.5}px rgba(204, 255, 0, ${shadowOpacity / 3}),
+                0 0 1px rgba(252, 255, 242, 0.3)
+              `;
+              text3d.style.filter = 'drop-shadow(0 0 0.5px rgba(204, 255, 0, 0.7))';
+            }
+            
+            // Continue animation
+            animationFrameId = requestAnimationFrame(updateAnimation);
+          }
+          
+          // Start animation loop
+          animationFrameId = requestAnimationFrame(updateAnimation);
+        
+          function onMouseMove(e) {
+            if (!isDragging) {
+              const { left, top, width, height } = container.getBoundingClientRect();
+              // calculate cursor offset from center
+              const x = e.clientX - (left + width / 2);
+              const y = e.clientY - (top + height / 2);
+              
+              // map to a max rotation of ±30°
+              targetRotY = (x / (width / 2)) * 30;
+              targetRotX = -(y / (height / 2)) * 30;
+              
+              // calculate z-offset based on cursor distance from center
+              const distance = Math.sqrt(x*x + y*y);
+              const maxDistance = Math.sqrt((width/2)*(width/2) + (height/2)*(height/2));
+              targetZOffset = (distance / maxDistance) * 20; // max 20px offset
+            }
+          }
+        
+          function onMouseLeave() {
+            // Only reset if not dragging
+            if (!isDragging && !isSpinning) {
+              // reset targets when the cursor leaves
+              targetRotX = 0;
+              targetRotY = 0;
+              targetZOffset = 0;
+            }
+          }
+
+          // Dragging functions
+          function onDragStart(e) {
+            // Now we can drag from anywhere within the container
+            e.preventDefault();
+            isDragging = true;
+            isSpinning = false;
+            
+            // Record starting positions
+            dragStartX = e.clientX;
+            dragStartY = e.clientY;
+            lastMouseX = e.clientX;
+            lastMouseY = e.clientY;
+            
+            // Style cursor
+            container.style.cursor = 'grabbing';
+            
+            // Add document-level event listeners
+            document.addEventListener('mousemove', onDrag);
+            document.addEventListener('mouseup', onDragEnd);
+          }
+          
+          function onDrag(e) {
+            if (isDragging) {
+              // Calculate movement since drag start
+              const deltaX = e.clientX - dragStartX;
+              const deltaY = e.clientY - dragStartY;
+              
+              // Calculate rotation (scale as needed)
+              targetRotY = deltaX * 0.5;
+              targetRotX = -deltaY * 0.5;
+              
+              // Calculate velocities for spinning effect
+              spinVelocityX = (e.clientX - lastMouseX) * 0.2;
+              spinVelocityY = (e.clientY - lastMouseY) * 0.2;
+              
+              // Update last position
+              lastMouseX = e.clientX;
+              lastMouseY = e.clientY;
+            }
+          }
+          
+          function onDragEnd() {
+            if (isDragging) {
+              isDragging = false;
+              isSpinning = true;
+              container.style.cursor = 'grab';
+              
+              // Remove document-level listeners
+              document.removeEventListener('mousemove', onDrag);
+              document.removeEventListener('mouseup', onDragEnd);
+            }
+          }
+          
+          // Add mouse hover events to container
+          container.addEventListener('mousemove', onMouseMove);
+          container.addEventListener('mouseleave', onMouseLeave);
+          
+          // Add dragging events to container (instead of just the 3D text)
+          container.addEventListener('mousedown', onDragStart);
+          
+          // Clean up on page unload
+          window.addEventListener('beforeunload', () => {
+            if (animationFrameId) {
+              cancelAnimationFrame(animationFrameId);
+            }
+            document.removeEventListener('mousemove', onDrag);
+            document.removeEventListener('mouseup', onDragEnd);
+          });
+        });
+      </script>
+      
       <div class="flex justify-start gap-2 pt-3 md:pt-6">
         <a
           target="_blank"
           href="https://github.com/gothsec"
           aria-label="GitHub"
-          class="text-[var(--white-icon)] hover:text-white transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
+          class="text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -47,7 +256,7 @@ import SkillsList from "../React/SkillsList.tsx";
           target="_blank"
           href="https://linkedin.com/in/hernandezoscar-dev"
           aria-label="LinkedIn"
-          class="text-[var(--white-icon)] hover:text-white transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
+          class="text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -64,7 +273,7 @@ import SkillsList from "../React/SkillsList.tsx";
           target="_blank"
           href="https://mail.google.com/mail/?view=cm&fs=1&to=oscarandreshernandezpineda@gmail.com&su=Hey%20Oscar!"
           aria-label="Email"
-          class="text-[var(--white-icon)] hover:text-white transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
+          class="text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -88,13 +297,8 @@ import SkillsList from "../React/SkillsList.tsx";
       <div
         class="flex justify-center md:w-full md:h-[292px] size-[290px] pt-3 md:pt-9 md:ml-16"
       >
-        <LetterGlitch
+        <ThreeDShowcase
           client:load
-          glitchColors={["#5e4491", "#A476FF", "#241a38"]}
-          glitchSpeed={33}
-          centerVignette={false}
-          outerVignette={true}
-          smooth={true}
         />
       </div>
     </div>
@@ -103,7 +307,7 @@ import SkillsList from "../React/SkillsList.tsx";
 
 <style is:global>
   .shiny-sec {
-    background: linear-gradient(135deg, #a476ff 25%, #eee5ff 50%, #a476ff 75%);
+    background: linear-gradient(135deg, #CCFF00 25%, #EEFFCC 50%, #CCFF00 75%);
     background-size: 400% 100%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -119,5 +323,25 @@ import SkillsList from "../React/SkillsList.tsx";
     70% {
       background-position: 0% 50%;
     }
+  }
+  
+  /* 3D text styles */
+  #text-3d {
+    position: relative;
+    display: inline-block;
+    font-weight: bold;
+    user-select: none; /* Prevent text selection while dragging */
+    touch-action: none; /* Prevent scrolling on touch devices */
+  }
+  
+  #text-3d::before {
+    content: "3D";
+    position: absolute;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    color: rgba(204, 255, 0, 0);
+    transform: translateZ(-3px);
+    filter: blur(1.5px);
   }
 </style>
