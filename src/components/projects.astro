@@ -15,32 +15,32 @@ interface Project {
 
 const projects: Project[] = [
   {
-    title: "MoviesForDevs",
+    title: "Chaotic Attractors",
     image: moviesfordevs as ImageMetadata,
-    link: "https://github.com/gothsec/MoviesForDevs",
+    link: "https://github.com/edlally/chaotic-attractors-bpy",
     preview: "/projects/docs",
     status: "On Development",
   },
   {
-    title: "StockIn",
+    title: "Placeholder Project 1",
     image: stockin as ImageMetadata,
-    link: "https://github.com/gothsec/stockin-demo",
-    preview: "https://stockin-demo.vercel.app",
-    status: "On Development",
+    link: "https://github.com/edlally",
+    preview: "#",
+    status: "In Progress",
   },
   {
-    title: "Svgl.app",
+    title: "Placeholder Project 2",
     image: svgl as ImageMetadata,
-    link: "https://github.com/pheralb/svgl",
-    preview: "https://svgl.app",
-    status: "Contributor",
+    link: "https://github.com/edlally",
+    preview: "#",
+    status: "Completed",
   },
   {
-    title: "Tron Legacy Web",
+    title: "Placeholder Project 3",
     image: tron as ImageMetadata,
-    link: "https://github.com/Gothsec/Tron-Legacy-web",
-    preview: "https://tron-legacy-web.vercel.app/",
-    status: "Template (not official)",
+    link: "https://github.com/edlally",
+    preview: "#",
+    status: "In Planning",
   },
 ];
 ---
@@ -70,7 +70,7 @@ const projects: Project[] = [
                   class="w-full h-48 md:h-72 object-cover group-hover:scale-105 transition-transform duration-300"
                 />
               </div>
-              <div class="flex items-center px-3">
+              <div class="project-card flex items-center p-4 rounded-xl backdrop-blur-xl border border-[#ffffff10] bg-[rgba(20,20,20,0.32)] transition-all duration-300">
                 <div class="flex-grow">
                   <h4 class="text-2xl font-semibold">{project.title}</h4>
                   <span class="py-1 text-sm text-[var(--white-icon)]">
@@ -82,7 +82,7 @@ const projects: Project[] = [
                     target="_blank"
                     href={project.link}
                     aria-label="GitHub"
-                    class="size-14 flex justify-center items-center text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
+                    class="size-14 flex justify-center items-center text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-[#ffffff10] p-3 rounded-xl backdrop-blur-md bg-[rgba(20,20,20,0.45)] hover:bg-[rgba(255,255,255,0.05)]"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -97,7 +97,7 @@ const projects: Project[] = [
                     target="_blank"
                     href={project.preview}
                     aria-label="Preview"
-                    class="size-14 flex justify-center items-center text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
+                    class="size-14 flex justify-center items-center text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-[#ffffff10] p-3 rounded-xl backdrop-blur-md bg-[rgba(20,20,20,0.45)] hover:bg-[rgba(255,255,255,0.05)]"
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -117,9 +117,9 @@ const projects: Project[] = [
     </div>
     <a
       target="_blank"
-      href="https://github.com/Gothsec?tab=repositories"
+      href="https://github.com/edlally?tab=repositories"
       aria-label="GitHub"
-      class="w-full flex items-center justify-center gap-2 mt-9 text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-[var(--white-icon-tr)] p-3 rounded-full bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
+      class="w-full flex items-center justify-center gap-2 mt-9 text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-[#ffffff10] p-3 rounded-full backdrop-blur-xl bg-[rgba(20,20,20,0.32)] hover:bg-[rgba(255,255,255,0.05)]"
     >
       <span class="md:text-lg text-md">More projects on</span>
       <svg
@@ -135,3 +135,14 @@ const projects: Project[] = [
     </a>
   </div>
 </section>
+
+<style>
+  .project-card {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+  }
+  
+  .group:hover .project-card {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  }
+</style>

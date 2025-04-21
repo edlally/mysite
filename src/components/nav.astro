@@ -99,6 +99,19 @@ const navItems: NavItem[] = [
       padding-bottom: 70px;
     }
   }
+
+  .red-theme nav#main-nav,
+  .red-theme nav#main-nav *,
+  .red-theme nav#main-nav a,
+  .red-theme nav#main-nav .nav-indicator {
+    background-color: var(--background) !important;
+    border-color: #ffffff10 !important;
+    color: var(--white-icon) !important;
+    transition: none !important;
+  }
+  .red-theme nav#main-nav a.active {
+    color: #FCFFF2 !important;
+  }
 </style>
 
 <script>

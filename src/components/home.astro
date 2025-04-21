@@ -1,30 +1,30 @@
 ---
-import ThreeDShowcase from "../React/ThreeDShowcase.tsx";
 import LogoWall from "../components/logoWall.astro";
 import SkillsList from "../React/SkillsList.tsx";
+import ThreeDBackground from "../React/ThreeDBackground.tsx";
 ---
 
-<section class="text-[var(--white)] mt-12 md:mt-0" id="home">
+<!-- 3D Background for Home Page -->
+<ThreeDBackground client:only="react" />
+
+<section class="text-[var(--white)] mt-12 md:mt-0 relative z-10" id="home">
   <div class="max-w-5xl mx-auto space-y-8 md:py-36 pb-14">
     <div class="text-left space-y-4">
       <p class="text-md md:text-lg text-[var(--white-icon)] shiny-white">
-        Hi, I'm Ed Lally.
+        Hi, I'm <span class="shiny-sec">Ed</span> 
       </p>
       <div 
         id="title-container" 
-        class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 md:gap-4 perspective-[800px] cursor-grab"
+        class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 md:gap-4 perspective-[800px]"
       >
         <h1 class="text-[var(--white)] text-5xl md:text-6xl font-medium text-pretty leading-none">
-          <span class="md:hidden">Blender</span>
-          <span class="hidden md:inline">Blender</span>
+          <span class="md:hidden"><span class="theme-letter">B</span>lender</span>
+          <span class="hidden md:inline"><span class="theme-letter">B</span>lender</span>
           <span
             id="text-3d"
             class="inline-block"
             style="
-              --rX: 0deg;
-              --rY: 0deg;
-              --z-offset: 0px;
-              transform: perspective(600px) rotateX(var(--rX)) rotateY(var(--rY)) translateZ(var(--z-offset));
+              transform: perspective(600px) rotateX(0deg) rotateY(0deg) translateZ(0px);
               transform-style: preserve-3d;
               transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
               text-shadow: none;
@@ -35,237 +35,1227 @@ import SkillsList from "../React/SkillsList.tsx";
             "
           >
             3D
+            <img id="thug-glasses" src="/svg/Thug_Life_Glasses.png" alt="Thug Life Glasses" style="position:absolute; left:50%; top:-60px; width:84px; transform:translateX(-50%); pointer-events:none; z-index:2; opacity:0;" />
+            <div id="tear-container" style="position:absolute; width:100%; left:0; top:0; height:100%; pointer-events:none; z-index:1; overflow:visible; opacity:0;">
+              <div class="tear tear-left" style="position:absolute; left:20%; top:20px; width:12px; height:12px; background:radial-gradient(circle at center, rgba(50, 150, 255, 1) 0%, rgba(0, 120, 255, 0.7) 70%); border-radius:50%; opacity:0;"></div>
+              <div class="tear tear-right" style="position:absolute; right:20%; top:20px; width:12px; height:12px; background:radial-gradient(circle at center, rgba(50, 150, 255, 1) 0%, rgba(0, 120, 255, 0.7) 70%); border-radius:50%; opacity:0;"></div>
+            </div>
           </span><br class="md:hidden"/>
-          Artist & Developer
+          <span class="theme-letter">A</span>rtist & <span class="theme-letter">D</span>eveloper
         </h1>
-        <p class="text-md md:text-2xl text-[var(--white-icon)]">
+        <p id="desc-typewriter" class="text-md md:text-2xl text-[var(--white-icon)]">
           Creating powerful visual experiences using technical Blender workflows and Python scripting.
           <span class="text-[var(--sec)] shiny-sec">Epicly.</span>
         </p>
+        <span id="secret-btn-container"></span>
       </div>
       
       <script is:inline>
         document.addEventListener('DOMContentLoaded', () => {
-          // Prevent multiple initializations
           if (window.__home3d_initialized) return;
           window.__home3d_initialized = true;
 
+          // Elements
           const container = document.getElementById('title-container');
           const text3d = document.getElementById('text-3d');
-          if (!container || !text3d) return;
-          
-          // Current values for smooth animation
+          const descTypewriter = document.getElementById('desc-typewriter');
+          const glasses = document.getElementById('thug-glasses');
+          const secretBtnContainer = document.getElementById('secret-btn-container');
+          const homeSection = document.getElementById('home');
+
+          if (!container || !text3d || !descTypewriter) return;
+
+          // State variables
           let currentRotX = 0;
           let currentRotY = 0;
           let currentZOffset = 0;
           let targetRotX = 0;
           let targetRotY = 0;
           let targetZOffset = 0;
+          let momentumX = 0; // New: store momentum for X rotation
+          let momentumY = 0; // New: store momentum for Y rotation
 
-          // For dragging and spinning
-          let isDragging = false;
-          let isSpinning = false;
-          let dragStartX = 0;
-          let dragStartY = 0;
-          let spinVelocityX = 0;
-          let spinVelocityY = 0;
-          let lastMouseX = 0;
-          let lastMouseY = 0;
-          let dampingFactor = 0.95; // Controls how quickly spinning slows down
-          
-          // Animation settings
-          const springStrength = 0.13; // Higher value = faster snap (0-1)
-          const returnSpringStrength = 0.06; // Return speed
-          
-          // Spring-like animation loop
           let animationFrameId = null;
           let isTabVisible = true;
-          function handleVisibilityChange() {
-            isTabVisible = !document.hidden;
-            if (!isTabVisible && animationFrameId) {
-              cancelAnimationFrame(animationFrameId);
-              animationFrameId = null;
-            } else if (isTabVisible && !animationFrameId) {
-              animationFrameId = requestAnimationFrame(updateAnimation);
+          let isHovered = false;
+          let isDragging = false;
+          let returnTimeout = null;
+          let isSectionVisible = true; // Track if section is in viewport
+
+          // Add head shake state
+          let isHeadShaking = false;
+          let headShakeAnimationId = null;
+          let headShakeStartTime = 0;
+          let headShakeBaseRotX = 0;
+          let headShakeBaseRotY = 0;
+
+          let spinCount = -1;
+          let isTyping = false;
+          let themeChanged = false;
+          let flyingGlasses = false;
+          let angularVelocity = 0;
+          let lastRotY = 0;
+
+          // Text content
+          const originalDesc = `Creating powerful visual experiences using technical Blender workflows and Python scripting.<span class="text-[var(--sec)] shiny-sec"> Epicly.</span>`;
+          const messages = [
+            `I see you've figured out how to spin that snazzy text.`,
+            `Having fun are we?`,
+            `I think that's probably enough. Why not check out some of my epic <a href="/projects/docs" class="text-[var(--sec)] shiny-sec">projects</a>?`,
+            `Okay, believe it or not, you're actually <i style="color:#ff6b6b;">hurting</i> the little guy.`,
+            `Seriously? You're still doing it?`,
+            `Great... You've made him cry.`,
+            `...`,
+          ];
+
+          // Constants
+          const SPRING_STRENGTH = 0.08; // Reduced from 0.13 for looser movement
+          const RETURN_SPRING_STRENGTH = 0.03; // Reduced from 0.06 for slower return
+          const MOVE_THROTTLE = 1000 / 60; // 60fps
+          const FRICTION = 0.97; // NEW: Friction coefficient - higher values mean less friction
+          const INERTIA = 0.92; // NEW: How quickly the text slows down - higher values mean slower deceleration
+          const RED_BUTTON_HTML = `<button id="secret-btn" style="display:inline-block;width:2em;height:2em;margin-left:0.7em;vertical-align:middle;border-radius:50%;background:radial-gradient(circle at 60% 40%, #ff4d4d 70%, #a80000 100%);border:3px solid #7a0000;box-shadow:0 2px 8px #0005,0 0 0 4px #fff3 inset;cursor:pointer;outline:none;transition:transform 0.2s, box-shadow 0.2s;" aria-label="Secret Button"></button>`;
+
+          let lastMove = 0;
+
+          // Add intersection observer to detect when section is in viewport
+          if (homeSection && 'IntersectionObserver' in window) {
+            const observer = new IntersectionObserver((entries) => {
+              entries.forEach(entry => {
+                isSectionVisible = entry.isIntersecting;
+                
+                // If section becomes visible, restart animation if needed
+                if (isSectionVisible && shouldAnimate() && !animationFrameId) {
+                  startAnimation();
+                }
+                
+                // If section is no longer visible, cancel any running animations to save CPU
+                if (!isSectionVisible && animationFrameId) {
+                  cancelAnimationFrame(animationFrameId);
+                  animationFrameId = null;
+                }
+              });
+            }, {
+              rootMargin: '0px',
+              threshold: 0.1 // Trigger when at least 10% of the section is visible
+            });
+            
+            observer.observe(homeSection);
+          }
+
+          // Helper Functions
+          function startAnimation() {
+            if (!animationFrameId && isTabVisible && isSectionVisible) {
+                animationFrameId = requestAnimationFrame(updateAnimation);
             }
           }
-          document.addEventListener('visibilitychange', handleVisibilityChange);
-          
+
+          function shouldAnimate() {
+            // Use stricter thresholds to determine if animation is truly needed
+            const isAtRestThreshold = 0.05; // Smaller threshold for determining "at rest"
+            const isAtBasePosition = Math.abs(currentRotX) < isAtRestThreshold && 
+                                    Math.abs(currentRotY) < isAtRestThreshold && 
+                                    Math.abs(currentZOffset) < isAtRestThreshold;
+                                    
+            // Check if we're actually moving significantly
+            const isMoving = Math.abs(targetRotX - currentRotX) > isAtRestThreshold || 
+                           Math.abs(targetRotY - currentRotY) > isAtRestThreshold ||
+                           Math.abs(targetZOffset - currentZOffset) > isAtRestThreshold;
+                           
+            // Only animate when really necessary
+            return (isHovered || isDragging || isHeadShaking || (!isAtBasePosition && isMoving) || flyingGlasses) && isSectionVisible;
+          }
+
           function updateAnimation() {
-            if (!isTabVisible) return;
-            if (isSpinning) {
-              // Apply spinning with damping
-              spinVelocityX *= dampingFactor;
-              spinVelocityY *= dampingFactor;
-              
-              // Stop spinning when velocity becomes very small
-              if (Math.abs(spinVelocityX) < 0.01 && Math.abs(spinVelocityY) < 0.01) {
-                isSpinning = false;
-              } else {
-                targetRotX += spinVelocityY;
-                targetRotY += spinVelocityX;
-              }
+            if (!isTabVisible || !isSectionVisible) {
+              animationFrameId = null;
+              return;
             }
             
-            // Calculate spring force
-            let diffX = targetRotX - currentRotX;
-            let diffY = targetRotY - currentRotY;
-            let diffZ = targetZOffset - currentZOffset;
+            // Calculate spring physics
+            const diffX = targetRotX - currentRotX;
+            const diffY = targetRotY - currentRotY;
+            const diffZ = targetZOffset - currentZOffset;
             
-            // Apply spring physics (smooth follow)
-            const strength = container.matches(':hover') || isDragging ? springStrength : returnSpringStrength;
-            currentRotX += diffX * strength;
-            currentRotY += diffY * strength;
-            currentZOffset += diffZ * strength;
+            // Apply different spring strengths based on state
+            let strengthX, strengthY;
+            if (isDragging) {
+              // When dragging, be very responsive
+              strengthX = strengthY = SPRING_STRENGTH;
+            } else if (isHovered) {
+              // When hovering, be moderately responsive
+              strengthX = strengthY = SPRING_STRENGTH * 0.8;
+            } else {
+              // In inertial motion, allow more freedom
+              strengthX = RETURN_SPRING_STRENGTH * 0.7;
+              strengthY = RETURN_SPRING_STRENGTH * 0.5; // Even less constraint on Y rotation for more spinning
+            }
             
-            // Update element transform
-            text3d.style.setProperty('--rX', `${currentRotX.toFixed(2)}deg`);
-            text3d.style.setProperty('--rY', `${currentRotY.toFixed(2)}deg`);
-            text3d.style.setProperty('--z-offset', `${currentZOffset.toFixed(2)}px`);
+            // Calculate angular velocity with more weight on recent movement
+            angularVelocity = (currentRotY - lastRotY) * 0.95 + angularVelocity * 0.05; // More sensitive to changes
+            lastRotY = currentRotY;
             
-            // Only apply glow when not in base position
+            // Apply physics with inertia
+            currentRotX += diffX * strengthX;
+            currentRotY += diffY * strengthY;
+            currentZOffset += diffZ * (isDragging ? SPRING_STRENGTH : RETURN_SPRING_STRENGTH);
+            
+            // Apply friction to ongoing motion - reduces speed gradually
+            if (!isDragging && !isHovered) {
+              // Apply more friction when rotation is slower to prevent endless tiny oscillations
+              const speedY = Math.abs(angularVelocity);
+              const dynamicFriction = speedY < 0.5 ? FRICTION * 0.95 : FRICTION;
+              
+              targetRotX *= dynamicFriction;
+              targetRotY *= dynamicFriction;
+            }
+            
+            // Only snap to target when very close
+            if (Math.abs(diffX) < 0.01) currentRotX = targetRotX;
+            if (Math.abs(diffY) < 0.01) currentRotY = targetRotY;
+            if (Math.abs(diffZ) < 0.01) currentZOffset = targetZOffset;
+
+            // Store transforms in local variables to reduce multiple calculations
+            const rX = `${currentRotX.toFixed(2)}deg`;
+            const rY = `${currentRotY.toFixed(2)}deg`;
+            const zOffset = `${currentZOffset.toFixed(2)}px`;
+
+            // Use single DOM update to set transforms instead of multiple style property changes
+            text3d.style.transform = `perspective(600px) rotateX(${rX}) rotateY(${rY}) translateZ(${zOffset})`;
+
+            // Apply shadows based on rotation only when necessary
             const isAtBasePosition = Math.abs(currentRotX) < 0.1 && Math.abs(currentRotY) < 0.1;
             
+            // Only update styles if they actually changed
             if (isAtBasePosition) {
-              text3d.style.textShadow = 'none';
-              text3d.style.filter = 'none';
+              if (text3d.style.textShadow !== 'none') {
+                text3d.style.textShadow = 'none';
+                text3d.style.filter = 'none';
+              }
             } else {
-              // Update shadow based on rotation (with constraints)
-              // Limit shadow offset to a maximum of 5px to keep glow close to text
+              // Get accent color and apply dynamic shadow - cache this computation
+              if (!window.accentRgbColor) {
+                const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--sec').trim();
+                window.accentRgbColor = hexToRgb(accentColor);
+              }
+              const rgbColor = window.accentRgbColor;
+              
               const maxShadowOffset = 5;
               const shadowX = Math.max(-maxShadowOffset, Math.min(maxShadowOffset, currentRotY / 3));
               const shadowY = Math.max(-maxShadowOffset, Math.min(maxShadowOffset, -currentRotX / 3));
               const shadowBlur = 4 + Math.min(6, currentZOffset / 3);
               const shadowOpacity = 0.15 + Math.min(0.3, (currentZOffset / 20) * 0.3);
               
-              text3d.style.textShadow = `
-                ${-shadowX}px ${-shadowY}px ${shadowBlur}px rgba(204, 255, 0, ${shadowOpacity}),
-                ${-shadowX * 1.5}px ${-shadowY * 1.5}px ${shadowBlur * 1.5}px rgba(204, 255, 0, ${shadowOpacity / 3}),
+              const newShadow = `
+                ${-shadowX}px ${-shadowY}px ${shadowBlur}px rgba(${rgbColor}, ${shadowOpacity}),
+                ${-shadowX * 1.5}px ${-shadowY * 1.5}px ${shadowBlur * 1.5}px rgba(${rgbColor}, ${shadowOpacity / 3}),
                 0 0 1px rgba(252, 255, 242, 0.3)
               `;
-              text3d.style.filter = 'drop-shadow(0 0 0.5px rgba(204, 255, 0, 0.7))';
+              
+              const newFilter = `drop-shadow(0 0 0.5px rgba(${rgbColor}, 0.7))`;
+              
+              // Only update DOM when the values actually change
+              if (text3d.style.textShadow !== newShadow) {
+                text3d.style.textShadow = newShadow;
+                text3d.style.filter = newFilter;
+              }
+            }
+
+            // Show/hide glasses based on rotation and spin count - batch these operations
+            if (glasses) {
+              let normY = ((currentRotY % 360) + 360) % 360;
+              if (normY > 180) normY -= 360;
+              
+              // Check if glasses should fly off due to high angular velocity
+              if (!flyingGlasses && isDragging && Math.abs(angularVelocity) > 50 && spinCount >= 2 && glasses.style.opacity === '1') {
+                flyGlassesOff();
+              }
+              
+              // Regular visibility based on rotation
+              if (!flyingGlasses) {
+                const shouldBeVisible = Math.abs(normY) <= 90 && spinCount >= 2;
+                const isVisible = glasses.style.opacity === '1';
+                
+                // Only update DOM when opacity actually needs to change
+                if (shouldBeVisible && !isVisible) {
+                  glasses.style.opacity = '1';
+                } else if (!shouldBeVisible && isVisible) {
+                  glasses.style.opacity = '0';
+                }
+              }
+            }
+
+            // Continue animation if still needed
+            if (shouldAnimate()) {
+              // Use alternate approach to request frame to reduce jank
+              if (window.requestIdleCallback) {
+                // Cancel existing animation frame to prevent duplicates
+                if (animationFrameId) {
+                  cancelAnimationFrame(animationFrameId);
+                }
+                window.requestIdleCallback(() => {
+                  animationFrameId = requestAnimationFrame(updateAnimation);
+                }, { timeout: 16 }); // Equivalent to 60fps timeout
+              } else {
+                animationFrameId = requestAnimationFrame(updateAnimation);
+              }
+            } else {
+              // Explicitly cancel animation and clean up
+              animationFrameId = null;
+              
+              // Make sure we're exactly at target values to prevent visual artifacts
+              if (!isHovered && !isDragging && !isHeadShaking && !flyingGlasses) {
+                currentRotX = targetRotX = 0;
+                currentRotY = targetRotY = 0;
+                currentZOffset = targetZOffset = 0;
+                
+                // Force final render state - single DOM update
+                text3d.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
+                text3d.style.textShadow = 'none';
+                text3d.style.filter = 'none';
+              }
+            }
+          }
+
+          // Convert hex color to RGB format
+          function hexToRgb(hex) {
+            hex = hex.replace(/^#/, '');
+            const bigint = parseInt(hex, 16);
+            const r = (bigint >> 16) & 255;
+            const g = (bigint >> 8) & 255;
+            const b = bigint & 255;
+            return `${r}, ${g}, ${b}`;
+          }
+
+          // Typewriter functions
+          function typewriterDelete(element, callback) {
+            if (!element) return;
+            
+            let current = element.innerHTML;
+            let startTime = null;
+            let charsPerFrame = 1; // Reduce to 1 character per frame for more natural deletion
+            let deleteInterval = 30; // Slow down deletion to 30ms per update
+            
+            function deleteChars(timestamp) {
+              if (!startTime) startTime = timestamp;
+              const elapsed = timestamp - startTime;
+              
+              // Only update DOM every deleteInterval ms
+              if (elapsed >= deleteInterval) {
+                startTime = timestamp;
+                
+                // Delete one character at a time for typewriter feel
+                if (current.length > 0) {
+                  current = current.slice(0, Math.max(0, current.length - charsPerFrame));
+                  element.innerHTML = current;
+                } else {
+                  if (callback) callback();
+                  return; // Stop animation
+                }
+              }
+              
+              if (current.length > 0) {
+                requestAnimationFrame(deleteChars);
+              } else if (callback) {
+                callback();
+              }
             }
             
-            // Continue animation
-            animationFrameId = requestAnimationFrame(updateAnimation);
+            requestAnimationFrame(deleteChars);
           }
-          
-          // Start animation loop
-          animationFrameId = requestAnimationFrame(updateAnimation);
-        
-          function onMouseMove(e) {
-            if (!isDragging) {
-              const { left, top, width, height } = container.getBoundingClientRect();
-              // calculate cursor offset from center
-              const x = e.clientX - (left + width / 2);
-              const y = e.clientY - (top + height / 2);
+
+          function typewriterWrite(element, text, speed = 20, callback) {
+            if (!element) return;
+            
+            let i = 0;
+            let output = '';
+            let startTime = null;
+            let lastUpdateTime = 0;
+            let buffer = '';
+            let inTag = false;
+            
+            function type(timestamp) {
+              if (!startTime) startTime = timestamp;
+              const elapsed = timestamp - lastUpdateTime;
               
-              // map to a max rotation of ±30°
-              targetRotY = (x / (width / 2)) * 30;
-              targetRotX = -(y / (height / 2)) * 30;
+              // Process characters with a typewriter pace
+              let shouldUpdate = false;
               
-              // calculate z-offset based on cursor distance from center
-              const distance = Math.sqrt(x*x + y*y);
-              const maxDistance = Math.sqrt((width/2)*(width/2) + (height/2)*(height/2));
-              targetZOffset = (distance / maxDistance) * 20; // max 20px offset
+              // Only process one character per frame if enough time has passed
+              if (elapsed >= speed && i < text.length) {
+                // Handle HTML tags - process entire tag at once
+                if (text[i] === '<' || inTag) {
+                  inTag = true;
+                  buffer += text[i];
+                  
+                  if (text[i] === '>') {
+                    inTag = false;
+                    output += buffer;
+                    buffer = '';
+                    shouldUpdate = true;
+                  }
+                  
+                  i++;
+                } else {
+                  // Regular character processing - one at a time
+                  output += text[i];
+                  i++;
+                  shouldUpdate = true;
+                  lastUpdateTime = timestamp;
+                }
+                
+                // Only update DOM when necessary
+                if (shouldUpdate) {
+                  element.innerHTML = output;
+                }
+              }
+              
+              // Continue or finish
+              if (i < text.length) {
+                requestAnimationFrame(type);
+              } else if (callback) {
+                callback();
+              }
+            }
+            
+            requestAnimationFrame(type);
+          }
+
+          // Change message in typewriter
+          function showMessage(index, callback) {
+            if (index < 0 || index >= messages.length || isTyping) return;
+            
+            isTyping = true;
+            typewriterDelete(descTypewriter, () => {
+              typewriterWrite(descTypewriter, messages[index], 20, () => {
+                isTyping = false;
+                
+                // Start crying animation when showing the "Got nothing better to do?" message (index 5)
+                // and continue for all subsequent messages until red button is clicked
+                if (index === 5) {
+                  startCrying();
+                }
+                
+                if (callback) callback();
+              });
+            });
+          }
+
+          // Interactive functions
+          function resetToOriginalDescription(callback) {
+            if (isTyping) return;
+            
+            isTyping = true;
+            typewriterDelete(descTypewriter, () => {
+              typewriterWrite(descTypewriter, originalDesc, 20, () => {
+                isTyping = false;
+                if (callback) callback();
+              });
+            });
+          }
+
+          function showRedButton() {
+            if (!secretBtnContainer) return;
+            
+            secretBtnContainer.innerHTML = RED_BUTTON_HTML;
+            
+            const secretBtn = document.getElementById('secret-btn');
+            if (secretBtn) {
+              secretBtn.addEventListener('click', handleRedButtonClick);
+              
+              // Add mouse enter/leave listeners for head shake
+              secretBtn.addEventListener('mouseenter', startHeadShake);
+              secretBtn.addEventListener('mouseleave', stopHeadShake);
             }
           }
-        
+
+          function handleRedButtonClick() {
+            // Change cursor to jk.svg instead of not-allowed
+            const cursorUrl = 'url("/svg/jk.svg"), auto';
+            document.documentElement.style.setProperty('cursor', cursorUrl, 'important');
+            
+            // Add style to ensure cursor overrides everywhere
+            const style = document.createElement('style');
+            style.id = 'cursor-override';
+            style.innerHTML = `
+              * { cursor: ${cursorUrl} !important; }
+              a, button, [role="button"], input, select, textarea, 
+              .clickable, [onclick], [data-clickable] { 
+                cursor: ${cursorUrl} !important; 
+              }
+            `;
+            document.head.appendChild(style);
+            
+            // Hide the button
+            const secretBtn = document.getElementById('secret-btn');
+            if (secretBtn) secretBtn.style.display = 'none';
+            
+            // Stop crying animation - this is the only place where crying should stop
+            stopCrying();
+            
+            // Show "get rekd" message
+            typewriterDelete(descTypewriter, () => {
+              typewriterWrite(descTypewriter, '( ͡° ͜ʖ ͡°)', 55);
+            });
+            
+            // Reset after 5 seconds
+            setTimeout(() => {
+              // Remove cursor override
+              document.documentElement.style.removeProperty('cursor');
+              if (style) style.remove();
+              
+              // Reset description with a delete animation first
+              typewriterDelete(descTypewriter, () => {
+                // After deleting "get rekd", reset the theme
+                resetTheme();
+                
+                // Then write the original description
+                typewriterWrite(descTypewriter, originalDesc, 20, () => {
+                  // Reset state variables
+                  spinCount = 0;
+                  
+                  // Clear button container
+                  if (secretBtnContainer) secretBtnContainer.innerHTML = '';
+                });
+              });
+            }, 5000);
+          }
+
+          // Add head shake animation functions
+          function startHeadShake() {
+            if (isHeadShaking || !text3d) return;
+            
+            // Store current rotation as the base position for the shake
+            headShakeBaseRotX = currentRotX;
+            headShakeBaseRotY = currentRotY;
+            
+            isHeadShaking = true;
+            headShakeStartTime = Date.now();
+            
+            // Start head shake animation loop
+            if (!headShakeAnimationId) {
+              headShakeAnimationId = requestAnimationFrame(updateHeadShake);
+            }
+            
+            // Tears should continue during head shake (don't stop them)
+          }
+
+          function stopHeadShake() {
+            if (!isHeadShaking) return;
+            
+            isHeadShaking = false;
+            
+            // Return to original position
+            targetRotX = headShakeBaseRotX;
+            targetRotY = headShakeBaseRotY;
+            
+            // Cancel the animation frame if it exists
+            if (headShakeAnimationId) {
+              cancelAnimationFrame(headShakeAnimationId);
+              headShakeAnimationId = null;
+            }
+            
+            // Ensure animation continues until base position is reached
+            startAnimation();
+            
+            // Tears should continue after head shake (don't stop them)
+          }
+
+          function updateHeadShake() {
+            if (!isHeadShaking || !isTabVisible) {
+              headShakeAnimationId = null;
+              return;
+            }
+            
+            const elapsed = Date.now() - headShakeStartTime;
+            const shakeDuration = 1500; // Total duration in ms
+            
+            if (elapsed >= shakeDuration) {
+              // Instead of stopping, reset the start time to create a continuous loop
+              headShakeStartTime = Date.now();
+            }
+            
+            // Calculate progress within the current cycle
+            const cycleProgress = (elapsed % shakeDuration) / shakeDuration;
+            const intensity = Math.sin(cycleProgress * Math.PI) * 15;
+            
+            // Generate realistic "no" head shake - primarily horizontal with natural easing
+            // Humans typically shake head in clear left-right-left-right pattern
+            const frequency = 7; // Define frequency for head shake
+            const horizontalShake = Math.sin(cycleProgress * Math.PI * frequency) * intensity * 4.0; // Extremely pronounced horizontal motion
+            
+            // Minimal vertical component - humans don't move up/down much when shaking "no"
+            const verticalShake = Math.sin(cycleProgress * Math.PI * frequency * 0.5) * (intensity * 0.15);
+            
+            // Add slight forward tilt - humans tend to tilt forward slightly when emphatically saying "no"
+            const tiltForward = Math.abs(Math.sin(cycleProgress * Math.PI)) * 3;
+            
+            // Apply shake to target rotation (relative to base position)
+            targetRotY = headShakeBaseRotY + horizontalShake;
+            targetRotX = headShakeBaseRotX + verticalShake - tiltForward; // Slight forward tilt
+            
+            // Add subtle z-axis oscillation for realism
+            targetZOffset = 5 + Math.abs(Math.sin(cycleProgress * Math.PI * frequency * 0.25)) * 3;
+            
+            // Start the main animation to smoothly apply these values
+            startAnimation();
+            
+            // Continue animation as long as isHeadShaking is true
+            headShakeAnimationId = requestAnimationFrame(updateHeadShake);
+          }
+
+          // Handle theme change when spinCount = 15
+          function changeTheme() {
+            if (themeChanged) return;
+            themeChanged = true;
+            
+            // Change CSS variables for theme
+            const root = document.documentElement;
+            const originalSec = getComputedStyle(root).getPropertyValue('--sec').trim();
+            const originalSecRgb = getComputedStyle(root).getPropertyValue('--sec-rgb').trim();
+            
+            // New theme colors - RED theme
+            const newSec = '#FF0000';
+            const newSecRgb = '255, 0, 0';
+            
+            // Parse colors for smooth transition
+            const parseColor = (hexColor) => {
+              const r = parseInt(hexColor.slice(1, 3), 16);
+              const g = parseInt(hexColor.slice(3, 5), 16);
+              const b = parseInt(hexColor.slice(5, 7), 16);
+              return { r, g, b };
+            };
+            
+            const startColor = parseColor(originalSec);
+            const endColor = parseColor(newSec);
+            
+            // Apply theme transition class first for smooth animation
+            document.body.classList.add('theme-transition');
+            
+            // Animate the color change using requestAnimationFrame for smooth transitions
+            let startTime = null;
+            const duration = 2000; // longer duration: 2 seconds
+            
+            function animateThemeChange(timestamp) {
+              if (!startTime) startTime = timestamp;
+              const elapsedTime = timestamp - startTime;
+              const progress = Math.min(elapsedTime / duration, 1);
+              
+              // Use easeInOutCubic for smoother motion
+              const easeProgress = progress < 0.5 
+                ? 4 * progress * progress * progress 
+                : 1 - Math.pow(-2 * progress + 2, 3) / 2;
+              
+              // Interpolate between colors
+              const currentR = Math.round(startColor.r + (endColor.r - startColor.r) * easeProgress);
+              const currentG = Math.round(startColor.g + (endColor.g - startColor.g) * easeProgress);
+              const currentB = Math.round(startColor.b + (endColor.b - startColor.b) * easeProgress);
+              
+              // Create current color
+              const currentColor = `#${currentR.toString(16).padStart(2, '0')}${currentG.toString(16).padStart(2, '0')}${currentB.toString(16).padStart(2, '0')}`;
+              const currentRgb = `${currentR}, ${currentG}, ${currentB}`;
+              
+              // Update CSS variables
+              root.style.setProperty('--sec', currentColor);
+              root.style.setProperty('--sec-rgb', currentRgb);
+              
+              // Update 3D model if progress is at specific points
+              if (progress > 0.1 && progress < 0.12 || progress > 0.5 && progress < 0.52 || progress > 0.9 && progress < 0.92) {
+                if (window.setThreeDTheme) {
+                  window.setThreeDTheme({
+                    color: currentColor,
+                    emission: currentColor
+                  });
+                }
+              }
+              
+              // Continue animation if not complete
+              if (progress < 1) {
+                requestAnimationFrame(animateThemeChange);
+              } else {
+                // Ensure final values are set
+                root.style.setProperty('--sec', newSec);
+                root.style.setProperty('--sec-rgb', newSecRgb);
+                
+                // Final 3D model update with exact end color
+                if (window.setThreeDTheme) {
+                  window.setThreeDTheme({
+                    color: newSec,
+                    emission: newSec
+                  });
+                }
+                
+                // Add a special CSS class to trigger additional theme-specific styles
+                document.body.classList.add('red-theme');
+                
+                // Show the red button immediately
+                showRedButton();
+                
+                // Show a message about the theme change
+                showMessage(messages.length, () => {
+                  // Add theme changed message if it doesn't exist
+                  if (messages.length <= 7) {
+                    messages.push(`<span style="color:${newSec}">Red Alert! Theme unlocked!</span>`);
+                  }
+                });
+                
+                // Add special animation effect for theme change
+                const allShinyElements = document.querySelectorAll('.shiny-sec');
+                allShinyElements.forEach(el => {
+                  el.classList.add('theme-pulse');
+                  setTimeout(() => {
+                    el.classList.remove('theme-pulse');
+                  }, 2000);
+                });
+                
+                // Add pulse effect to theme letters
+                const themeLetters = document.querySelectorAll('.theme-letter');
+                themeLetters.forEach(el => {
+                  el.classList.add('theme-pulse');
+                  setTimeout(() => {
+                    el.classList.remove('theme-pulse');
+                  }, 2000);
+                });
+                
+                // Also update skills icons with a special effect
+                const allSkillsIcons = document.querySelectorAll('.skills-theme-icon');
+                allSkillsIcons.forEach(icon => {
+                  icon.classList.add('theme-pulse');
+                  setTimeout(() => {
+                    icon.classList.remove('theme-pulse');
+                  }, 2000);
+                });
+              }
+            }
+            
+            // Start the animation
+            requestAnimationFrame(animateThemeChange);
+            
+            // Optional: Allow changing back to original theme after a while
+            setTimeout(() => {
+              themeChanged = false;
+            }, 30000); // Allow changing back after 30 seconds
+          }
+
+          // Add a function to reset the theme
+          function resetTheme() {
+            // Stop crying animation if active - We keep this here since this is used for theme reset, not head shake
+            stopCrying();
+            
+            // Get the root element
+            const root = document.documentElement;
+            
+            // Default theme colors
+            const defaultSec = '#CCFF00';
+            const defaultSecRgb = '204, 255, 0';
+            
+            // Current theme color
+            const currentSec = getComputedStyle(root).getPropertyValue('--sec').trim();
+            
+            // Parse colors for smooth transition
+            const parseColor = (hexColor) => {
+              const r = parseInt(hexColor.slice(1, 3), 16);
+              const g = parseInt(hexColor.slice(3, 5), 16);
+              const b = parseInt(hexColor.slice(5, 7), 16);
+              return { r, g, b };
+            };
+            
+            const startColor = parseColor(currentSec);
+            const endColor = parseColor(defaultSec);
+            
+            // Animate the color change back using requestAnimationFrame
+            let startTime = null;
+            const duration = 1500; // 1.5 seconds for reset
+            
+            function animateThemeReset(timestamp) {
+              if (!startTime) startTime = timestamp;
+              const elapsedTime = timestamp - startTime;
+              const progress = Math.min(elapsedTime / duration, 1);
+              
+              // Use easeOutQuad for smooth return
+              const easeProgress = 1 - (1 - progress) * (1 - progress);
+              
+              // Interpolate between colors
+              const currentR = Math.round(startColor.r + (endColor.r - startColor.r) * easeProgress);
+              const currentG = Math.round(startColor.g + (endColor.g - startColor.g) * easeProgress);
+              const currentB = Math.round(startColor.b + (endColor.b - startColor.b) * easeProgress);
+              
+              // Create current color
+              const currentColor = `#${currentR.toString(16).padStart(2, '0')}${currentG.toString(16).padStart(2, '0')}${currentB.toString(16).padStart(2, '0')}`;
+              const currentRgb = `${currentR}, ${currentG}, ${currentB}`;
+              
+              // Update CSS variables
+              root.style.setProperty('--sec', currentColor);
+              root.style.setProperty('--sec-rgb', currentRgb);
+              
+              // Update 3D model at specific points
+              if (progress > 0.2 && progress < 0.22 || progress > 0.6 && progress < 0.62 || progress > 0.9 && progress < 0.92) {
+                if (window.setThreeDTheme) {
+                  window.setThreeDTheme({
+                    color: currentColor,
+                    emission: currentColor
+                  });
+                }
+              }
+              
+              // Continue animation if not complete
+              if (progress < 1) {
+                requestAnimationFrame(animateThemeReset);
+              } else {
+                // Ensure final values are set
+                root.style.setProperty('--sec', defaultSec);
+                root.style.setProperty('--sec-rgb', defaultSecRgb);
+                
+                // Final 3D model update
+                if (window.setThreeDTheme) {
+                  window.setThreeDTheme({
+                    color: defaultSec,
+                    emission: defaultSec
+                  });
+                }
+                
+                // Remove theme classes
+                document.body.classList.remove('red-theme');
+                
+                // Remove transition class after a brief delay
+                setTimeout(() => {
+                  document.body.classList.remove('theme-transition');
+                }, 1000);
+                
+                // Reset themeChanged flag
+                themeChanged = false;
+              }
+            }
+            
+            // Start the reset animation
+            requestAnimationFrame(animateThemeReset);
+          }
+
+          // Set glasses animation
+          function showGlasses() {
+            if (!glasses) return;
+            
+            glasses.style.transition = 'top 1.6s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.5s';
+            glasses.style.top = '8px';
+            glasses.style.opacity = '1';
+            flyingGlasses = false;
+          }
+          
+          // Add tear animation functionality
+          function startCrying() {
+            const tearContainer = document.getElementById('tear-container');
+            if (!tearContainer) return;
+            
+            tearContainer.style.opacity = '1';
+            
+            // Setup continuous tear animation
+            function createTear(isLeft = true) {
+              const tearClass = isLeft ? 'tear-left' : 'tear-right';
+              const tearElement = tearContainer.querySelector(`.${tearClass}`);
+              
+              // Check if the tear element exists before trying to clone it
+              if (!tearElement) return;
+              
+              const tear = tearElement.cloneNode(true);
+              tear.style.opacity = '0.9';
+              tear.style.top = '20px'; // Start position under glasses
+              
+              // Randomize slightly
+              const xOffset = (Math.random() * 10) - 5;
+              if (isLeft) {
+                tear.style.left = `calc(20% + ${xOffset}px)`;
+              } else {
+                tear.style.right = `calc(20% + ${xOffset}px)`;
+              }
+              
+              // Add to container
+              tearContainer.appendChild(tear);
+              
+              // Animate tear falling
+              requestAnimationFrame(() => {
+                tear.style.transition = `top 2s cubic-bezier(0.5, 0, 0.75, 0), opacity 2s ease-out, transform 2s ease-out`;
+                tear.style.top = '120px'; // Increased fall distance
+                tear.style.opacity = '0';
+                tear.style.transform = `translateX(${isLeft ? -20 : 20}px) scale(0.5)`;
+                
+                // Remove tear after animation completes
+                setTimeout(() => {
+                  if (tear.parentNode) {
+                    tear.parentNode.removeChild(tear);
+                  }
+                }, 2000);
+              });
+            }
+            
+            // Create tears at more frequent intervals
+            let leftTearInterval = setInterval(() => createTear(true), 500); // More frequent tears
+            let rightTearInterval = setInterval(() => createTear(false), 600); // More frequent tears
+            
+            // Store intervals for cleanup
+            window.tearIntervals = [leftTearInterval, rightTearInterval];
+          }
+          
+          function stopCrying() {
+            const tearContainer = document.getElementById('tear-container');
+            if (!tearContainer) return;
+            
+            tearContainer.style.opacity = '0';
+            
+            // Clear tear intervals
+            if (window.tearIntervals) {
+              window.tearIntervals.forEach(interval => clearInterval(interval));
+              window.tearIntervals = [];
+            }
+            
+            // Remove all existing tears
+            const tears = tearContainer.querySelectorAll('.tear');
+            tears.forEach(tear => {
+              if (tear.parentNode) {
+                tear.parentNode.removeChild(tear);
+              }
+            });
+          }
+          
+          // Make glasses fly off
+          function flyGlassesOff() {
+            if (!glasses || flyingGlasses) return;
+            
+            flyingGlasses = true;
+            
+            // Calculate direction based on angular velocity
+            const direction = angularVelocity > 0 ? 1 : -1;
+            const intensity = Math.min(Math.abs(angularVelocity) / 5, 5); // Cap the intensity
+            
+            // Get current 3D text position and rotation
+            const text3dRect = text3d.getBoundingClientRect();
+            const glassesRect = glasses.getBoundingClientRect();
+            
+            // Create a detached clone of the glasses that will fly off
+            const detachedGlasses = glasses.cloneNode(true);
+            document.body.appendChild(detachedGlasses);
+            
+            // Style the detached glasses to match current position exactly
+            detachedGlasses.id = "flying-glasses";
+            detachedGlasses.style.position = "fixed";
+            detachedGlasses.style.left = `${glassesRect.left}px`;
+            detachedGlasses.style.top = `${glassesRect.top}px`;
+            detachedGlasses.style.width = `${glassesRect.width}px`;
+            detachedGlasses.style.height = `${glassesRect.height}px`;
+            detachedGlasses.style.transform = "none";
+            detachedGlasses.style.transformOrigin = "center center";
+            detachedGlasses.style.opacity = "1";
+            detachedGlasses.style.zIndex = "9999";
+            
+            // Hide the original glasses
+            glasses.style.opacity = "0";
+            
+            // Calculate the tangent direction based on current rotation
+            // Convert rotation to radians
+            const angleRad = (currentRotY * Math.PI) / 180;
+            // Direction vector for the glasses to fly
+            const dirX = Math.sin(angleRad) * direction;
+            const dirY = Math.cos(angleRad) * 0.3; // Slight upward trajectory
+            
+            // Apply flying animation to the detached glasses
+            requestAnimationFrame(() => {
+              detachedGlasses.style.transition = "all 1s cubic-bezier(0.2, 0.9, 0.3, 1)";
+              detachedGlasses.style.transform = `translate(${dirX * window.innerWidth}px, ${-dirY * window.innerHeight}px) scale(${0.8 + intensity * 0.1}) rotate(${direction * 720}deg)`;
+              detachedGlasses.style.opacity = "0";
+              
+              // Remove detached glasses after animation completes
+              setTimeout(() => {
+                if (detachedGlasses.parentNode) {
+                  detachedGlasses.parentNode.removeChild(detachedGlasses);
+                }
+                
+                // Reset and return original glasses after 2 seconds
+                setTimeout(() => {
+                  if (glasses) {
+                    // Reset position silently
+                    glasses.style.transition = "none";
+                    glasses.style.transform = "translateX(-50%)";
+                    glasses.style.top = "-60px";
+                    
+                    // Show glasses animation after a brief moment
+                    setTimeout(() => {
+                      showGlasses();
+                    }, 50);
+                  }
+                }, 1000);
+              }, 1000);
+            });
+          }
+
+          // Mouse/Touch Event Handlers
+          function onMouseMove(e) {
+            if (isDragging) return;
+            
+            const now = performance.now();
+            // Increase throttle threshold to reduce the number of calculations
+            if (now - lastMove < MOVE_THROTTLE * 1.5) return;
+            lastMove = now;
+            
+            const { left, top, width, height } = container.getBoundingClientRect();
+            const x = e.clientX - (left + width / 2);
+            const y = e.clientY - (top + height / 2);
+            
+            targetRotY = (x / (width / 2)) * 30;
+            targetRotX = -(y / (height / 2)) * 30;
+            
+            const distance = Math.sqrt(x*x + y*y);
+            const maxDistance = Math.sqrt((width/2)*(width/2) + (height/2)*(height/2));
+            targetZOffset = (distance / maxDistance) * 20;
+            
+            startAnimation();
+          }
+
+          function onMouseEnter() {
+            isHovered = true;
+            startAnimation();
+          }
+
           function onMouseLeave() {
-            // Only reset if not dragging
-            if (!isDragging && !isSpinning) {
-              // reset targets when the cursor leaves
+            isHovered = false;
+            if (!isDragging) {
               targetRotX = 0;
               targetRotY = 0;
               targetZOffset = 0;
+              startAnimation();
             }
           }
 
-          // Dragging functions
           function onDragStart(e) {
-            // Now we can drag from anywhere within the container
             e.preventDefault();
             isDragging = true;
-            isSpinning = false;
             
-            // Record starting positions
-            dragStartX = e.clientX;
-            dragStartY = e.clientY;
-            lastMouseX = e.clientX;
-            lastMouseY = e.clientY;
-            
-            // Style cursor
-            container.style.cursor = 'grabbing';
-            
-            // Add document-level event listeners
-            document.addEventListener('mousemove', onDrag);
-            document.addEventListener('mouseup', onDragEnd);
-          }
-          
-          function onDrag(e) {
-            if (isDragging) {
-              // Calculate movement since drag start
-              const deltaX = e.clientX - dragStartX;
-              const deltaY = e.clientY - dragStartY;
-              
-              // Calculate rotation (scale as needed)
-              targetRotY = deltaX * 0.5;
-              targetRotX = -deltaY * 0.5;
-              
-              // Calculate velocities for spinning effect
-              spinVelocityX = (e.clientX - lastMouseX) * 0.2;
-              spinVelocityY = (e.clientY - lastMouseY) * 0.2;
-              
-              // Update last position
-              lastMouseX = e.clientX;
-              lastMouseY = e.clientY;
+            if (returnTimeout) {
+              clearTimeout(returnTimeout);
+              returnTimeout = null;
             }
+            
+            text3d.classList.add('grabbing');
+            document.addEventListener('mousemove', onDragMove, { passive: false });
+            document.addEventListener('mouseup', onDragEnd, { passive: false });
+            
+            startAnimation();
           }
-          
-          function onDragEnd() {
-            if (isDragging) {
-              isDragging = false;
-              isSpinning = true;
-              container.style.cursor = 'grab';
-              
-              // Remove document-level listeners
-              document.removeEventListener('mousemove', onDrag);
-              document.removeEventListener('mouseup', onDragEnd);
-            }
-          }
-          
-          // Add mouse hover events to container
-          container.addEventListener('mousemove', onMouseMove);
-          container.addEventListener('mouseleave', onMouseLeave);
-          
-          // Add dragging events to container (instead of just the 3D text)
-          container.addEventListener('mousedown', onDragStart);
 
-          // --- Cleanup function for all listeners and animation frames ---
+          function onDragMove(e) {
+            if (!isDragging) return;
+            e.preventDefault();
+            
+            const now = performance.now();
+            // Increase throttle for drag movements
+            if (now - lastMove < MOVE_THROTTLE * 2) return;
+            lastMove = now;
+            
+            const dx = e.movementX;
+            const dy = e.movementY;
+            
+            // Further increased rotation multiplier for even more pronounced movement
+            targetRotY += dx * 1.5;
+            targetRotX -= dy * 1.2;
+            
+            // Increased max Z offset for more dramatic effect
+            targetZOffset = Math.min(30, Math.sqrt(targetRotX*targetRotX + targetRotY*targetRotY) / 2);
+            
+            startAnimation();
+          }
+
+          function onDragEnd() {
+            isDragging = false;
+            text3d.classList.remove('grabbing');
+            
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            
+            // Calculate momentum with higher values for more dramatic spinning
+            momentumX = (currentRotX - targetRotX) * 0.2;
+            momentumY = angularVelocity * 0.8; // Higher multiplier for more Y momentum (spin)
+            
+            // Apply momentum to target rotation - amplify for more dramatic effect
+            targetRotX += momentumX * 3;
+            targetRotY += momentumY * 8; // Much higher multiplier for Y to encourage spinning
+            
+            // Return to neutral position after a longer delay
+            if (returnTimeout) clearTimeout(returnTimeout);
+            returnTimeout = setTimeout(() => {
+              // Gradually slow down rotation over time instead of immediate reset
+              const slowdownInterval = setInterval(() => {
+                // Reduce momentum by only 5% each interval for longer spinning
+                targetRotX *= 0.95;
+                targetRotY *= 0.95;
+                
+                // If rotation has slowed down enough, reset to neutral position
+                if (Math.abs(targetRotX) < 0.8 && Math.abs(targetRotY) < 0.8) {
+                  clearInterval(slowdownInterval);
+                  targetRotX = 0;
+                  targetRotY = 0;
+                  targetZOffset = 0;
+                }
+                
+                startAnimation();
+              }, 120); // Slower interval between adjustments
+            }, 3000); // Wait 3 seconds before starting to slow down
+            
+            // Handle spin count and interactive sequence
+            if (window.innerWidth <= 768) return; // Skip on mobile
+            if (isTyping) return; // Don't process if already typing
+            
+            spinCount++;
+            console.debug('[3D Spin] spinCount:', spinCount);
+            
+            // Check for theme change trigger
+            if (spinCount === 15) {
+              changeTheme();
+            }
+            
+            // Handle messages sequence
+            if (spinCount === 1) {
+              showMessage(0);
+            } else if (spinCount > 1 && spinCount % 2 === 1 && spinCount / 2 < messages.length) {
+              const messageIndex = Math.floor(spinCount / 2);
+              showMessage(messageIndex);
+              
+              // Make sure crying continues if we've shown the "Great... You've made him cry." message
+              // This handles the case where we show a message at or beyond message 5
+              if (messageIndex >= 5) {
+                // Check if we should be crying but aren't
+                const tearContainer = document.getElementById('tear-container');
+                if (tearContainer && tearContainer.style.opacity !== '1' && !window.tearIntervals?.length) {
+                  startCrying();
+                }
+              }
+            }
+            
+            // Show glasses at spinCount = 2
+            if (spinCount === 2) {
+              showGlasses();
+            }
+          }
+
+          // Set up visibility change handler
+          function handleVisibilityChange() {
+            isTabVisible = !document.hidden;
+            
+            if (!isTabVisible) {
+              document.removeEventListener('mousemove', onMouseMove);
+              document.removeEventListener('mouseenter', onMouseEnter);
+              document.removeEventListener('mouseleave', onMouseLeave);
+              document.removeEventListener('mousedown', onDragStart);
+              document.removeEventListener('mousemove', onDragMove);
+              document.removeEventListener('mouseup', onDragEnd);
+              
+              if (animationFrameId) {
+                cancelAnimationFrame(animationFrameId);
+                animationFrameId = null;
+              }
+              } else {
+              // Re-add event listeners
+              container.addEventListener('mousemove', onMouseMove, { passive: true });
+              container.addEventListener('mouseenter', onMouseEnter, { passive: true });
+              container.addEventListener('mouseleave', onMouseLeave, { passive: true });
+              text3d.addEventListener('mousedown', onDragStart, { passive: false });
+              
+              // Restart animation if needed
+              if (shouldAnimate() && !animationFrameId) {
+                startAnimation();
+              }
+            }
+          }
+
+          // Initialize
+            descTypewriter.innerHTML = '';
+          typewriterWrite(descTypewriter, originalDesc, 20);
+
+          // Add event listeners
+          container.addEventListener('mousemove', onMouseMove, { passive: true });
+          container.addEventListener('mouseenter', onMouseEnter, { passive: true });
+          container.addEventListener('mouseleave', onMouseLeave, { passive: true });
+          text3d.addEventListener('mousedown', onDragStart, { passive: false });
+          document.addEventListener('visibilitychange', handleVisibilityChange);
+
+          // Cleanup function
           const cleanup = () => {
             if (animationFrameId) {
               cancelAnimationFrame(animationFrameId);
-              animationFrameId = null;
             }
-            container.removeEventListener('mousemove', onMouseMove);
-            container.removeEventListener('mouseleave', onMouseLeave);
-            container.removeEventListener('mousedown', onDragStart);
-            document.removeEventListener('mousemove', onDrag);
-            document.removeEventListener('mouseup', onDragEnd);
+            
+            if (headShakeAnimationId) {
+              cancelAnimationFrame(headShakeAnimationId);
+            }
+            
             document.removeEventListener('visibilitychange', handleVisibilityChange);
-            window.removeEventListener('beforeunload', cleanup);
+            container.removeEventListener('mousemove', onMouseMove);
+            container.removeEventListener('mouseenter', onMouseEnter);
+            container.removeEventListener('mouseleave', onMouseLeave);
+            text3d.removeEventListener('mousedown', onDragStart);
+            document.removeEventListener('mousemove', onDragMove);
+            document.removeEventListener('mouseup', onDragEnd);
+            
+            if (returnTimeout) clearTimeout(returnTimeout);
+            
             window.__home3d_initialized = false;
           };
 
-          // Clean up on page unload or navigation
           window.addEventListener('beforeunload', cleanup);
+          
+          // Make theme functions available globally for the debug button
+          window.changeTheme = changeTheme;
+          window.resetTheme = resetTheme;
+        });
+      </script>
+      
+      <!-- Debug theme toggle script -->
+      <script is:inline>
+        document.addEventListener('DOMContentLoaded', () => {
+          const debugThemeToggle = document.getElementById('debug-theme-toggle');
+          if (!debugThemeToggle) return;
+          
+          let isRedTheme = false;
+          
+          debugThemeToggle.addEventListener('click', () => {
+            if (isRedTheme) {
+              // Reset theme if it's currently red
+              if (typeof resetTheme === 'function') {
+                resetTheme();
+                debugThemeToggle.textContent = 'Debug: Activate Red Theme';
+                
+                // Remove theme classes
+                document.body.classList.remove('red-theme');
+                
+                // Hide glasses if present
+                const glasses = document.getElementById('thug-glasses');
+                if (glasses) glasses.style.opacity = '0';
+                
+                // Reset the description with original text
+                const descTypewriter = document.getElementById('desc-typewriter');
+                if (descTypewriter) {
+                  const originalDesc = `Creating powerful visual experiences using technical Blender workflows and Python scripting.<span class="text-[var(--sec)] shiny-sec"> Epicly.</span>`;
+                  descTypewriter.innerHTML = originalDesc;
+                }
+                
+                // Hide red button if present
+                const secretBtnContainer = document.getElementById('secret-btn-container');
+                if (secretBtnContainer) secretBtnContainer.innerHTML = '';
+              }
+            } else {
+              // Change to red theme
+              if (typeof changeTheme === 'function') {
+                changeTheme();
+                debugThemeToggle.textContent = 'Debug: Reset Theme';
+              }
+            }
+            
+            isRedTheme = !isRedTheme;
+          });
         });
       </script>
       
       <div class="flex justify-start gap-2 pt-3 md:pt-6">
         <a
           target="_blank"
-          href="https://github.com/gothsec"
+          href="https://github.com/edlally"
           aria-label="GitHub"
           class="text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
         >
@@ -282,7 +1272,7 @@ import SkillsList from "../React/SkillsList.tsx";
         </a>
         <a
           target="_blank"
-          href="https://linkedin.com/in/hernandezoscar-dev"
+          href="https://www.linkedin.com/in/eddie-lally/"
           aria-label="LinkedIn"
           class="text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
         >
@@ -299,7 +1289,7 @@ import SkillsList from "../React/SkillsList.tsx";
         </a>
         <a
           target="_blank"
-          href="https://mail.google.com/mail/?view=cm&fs=1&to=oscarandreshernandezpineda@gmail.com&su=Hey%20Oscar!"
+          href="mailto:eddielally@outlook.com"
           aria-label="Email"
           class="text-[var(--white-icon)] hover:text-[#FCFFF2] transition duration-300 ease-in-out border border-1 border-[var(--white-icon-tr)] p-3 rounded-xl bg-[#1414149c] hover:bg-[var(--white-icon-tr)]"
         >
@@ -321,21 +1311,84 @@ import SkillsList from "../React/SkillsList.tsx";
     <LogoWall />
 
     <div class="flex flex-col lg:flex-row items-center gap-8">
-      <SkillsList client:load />
-      <div
-        class="flex justify-center md:w-full md:h-[292px] size-[290px] pt-3 md:pt-9 md:ml-16"
+      <SkillsList client:visible />
+    </div>
+    
+    <!-- Debug Button for theme toggle -->
+    <div class="fixed bottom-4 right-4 z-50">
+      <button 
+        id="debug-theme-toggle" 
+        class="bg-gray-800 text-white text-xs px-3 py-2 rounded-lg border border-gray-600 opacity-70 hover:opacity-100 transition-opacity"
       >
-        <ThreeDShowcase
-          client:load
-        />
-      </div>
+        Debug: Toggle Theme
+      </button>
     </div>
   </div>
 </section>
 
 <style is:global>
+  :root {
+    --sec-rgb: 204, 255, 0;
+  }
+  
+  .home-blur-bg {
+    background: rgba(20,20,20,0.32);
+    backdrop-filter: blur(18px);
+    -webkit-backdrop-filter: blur(18px);
+    border-radius: 1.2rem;
+    padding: 2.2rem 2.2rem 2.2rem 2.2rem;
+    box-shadow: 0 0 0 0 transparent;
+    margin-bottom: 1.5rem;
+  }
+  
+  /* Add smooth transitions for theme changes */
+  .theme-transition * {
+    transition: background-color 0.8s ease, border-color 0.8s ease,
+                fill 0.8s ease, stroke 0.8s ease, filter 0.8s ease, text-shadow 0.8s ease;
+  }
+  
+  /* Theme letters styling */
+  .theme-letter {
+    transition: color 0.8s ease;
+  }
+  
+  .red-theme .theme-letter {
+    color: var(--sec);
+    text-shadow: 0 0 5px rgba(var(--sec-rgb), 0.4);
+  }
+  
+  /* Special animation for theme change */
+  @keyframes theme-pulse {
+    0% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.2); opacity: 0.8; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  
+  .theme-pulse {
+    animation: theme-pulse 1s cubic-bezier(0.34, 1.56, 0.64, 1);
+  }
+  
+  /* RED theme specific styles to ensure all elements change */
+  .red-theme .skills-theme-icon {
+    filter: drop-shadow(0 0 5px var(--sec));
+  }
+  
+  .red-theme #text-3d::before {
+    text-shadow: 0 0 5px var(--sec);
+  }
+  
+  /* Ensure social icons also get theme changes */
+  .red-theme a:hover svg {
+    filter: drop-shadow(0 0 5px var(--sec));
+  }
+  
+  /* Theme-specific shadow for 3D elements */
+  .red-theme #text-3d {
+    text-shadow: 0 0 8px rgba(var(--sec-rgb), 0.4) !important;
+  }
+  
   .shiny-sec {
-    background: linear-gradient(135deg, #CCFF00 25%, #EEFFCC 50%, #CCFF00 75%);
+    background: linear-gradient(135deg, var(--sec) 25%, #EEFFCC 50%, var(--sec) 75%);
     background-size: 400% 100%;
     -webkit-background-clip: text;
     background-clip: text;
@@ -352,14 +1405,24 @@ import SkillsList from "../React/SkillsList.tsx";
       background-position: 0% 50%;
     }
   }
-  
-  /* 3D text styles */
+
   #text-3d {
     position: relative;
     display: inline-block;
     font-weight: bold;
-    user-select: none; /* Prevent text selection while dragging */
-    touch-action: none; /* Prevent scrolling on touch devices */
+    user-select: none;
+    touch-action: none;
+    cursor: url('/svg/openhand.svg') 16 16, grab;
+    overflow: visible;
+    transform-style: preserve-3d;
+  }
+  
+  #text-3d:hover {
+    cursor: url('/svg/openhand.svg') 16 16, grab;
+  }
+  
+  #text-3d.grabbing, #text-3d:active {
+    cursor: url('/svg/closedhand.svg') 16 16, grabbing;
   }
   
   #text-3d::before {
@@ -368,8 +1431,61 @@ import SkillsList from "../React/SkillsList.tsx";
     top: 0;
     left: 0;
     z-index: -1;
-    color: rgba(204, 255, 0, 0);
+    color: rgba(var(--sec-rgb), 0);
     transform: translateZ(-3px);
     filter: blur(1.5px);
+  }
+
+  #desc-typewriter {
+    display: block;
+    min-height: 2.8em;
+    width: 100%;
+  }
+
+  #thug-glasses {
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
+    transition: opacity 0.2s;
+  }
+
+  .skills-theme-icon {
+    color: var(--sec);
+    transition: color 1s cubic-bezier(0.4,0,0.2,1);
+  }
+
+  /* Add CSS animation for head shake in style section */
+  @keyframes head-shake {
+    0% { transform: rotate(0deg); }
+    20% { transform: rotate(45deg); }
+    40% { transform: rotate(0deg); }
+    60% { transform: rotate(-45deg); }
+    80% { transform: rotate(0deg); }
+    100% { transform: rotate(0deg); }
+  }
+
+  .red-theme #text-3d {
+    text-shadow: 0 0 8px rgba(var(--sec-rgb), 0.4) !important;
+  }
+
+  @keyframes tear-drop {
+    0% { 
+      opacity: 0.9;
+      transform: translateY(0) scale(1);
+    }
+    100% { 
+      opacity: 0;
+      transform: translateY(120px) scale(0.5);
+    }
+  }
+
+  #tear-container {
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+  }
+
+  .tear {
+    filter: drop-shadow(0 0 4px rgba(0, 140, 255, 0.9));
+    backface-visibility: hidden;
+    transform-style: preserve-3d;
   }
 </style>
