@@ -434,55 +434,6 @@ const ThreeDShowcase = () => {
     };
   }, [selectedModel]);
 
-  // --- THEME SWITCHING LOGIC ---
-  useEffect(() => {
-    function setThreeDTheme({ color, emission }: { color?: string; emission?: string }) {
-      if (!modelRef.current) return;
-      const targetColor = new THREE.Color(color || '#CCFF00');
-      const targetEmission = new THREE.Color(emission || '#CCFF00');
-      let start: number | null = null;
-      const duration = 1000; // ms, must match home.astro
-      // Gather all mesh materials
-      let meshMaterials: any[] = [];
-      modelRef.current.traverse((object: any) => {
-        if (object instanceof THREE.Mesh && object.material) {
-          if (Array.isArray(object.material)) {
-            object.material.forEach((mat: any) => meshMaterials.push(mat));
-          } else {
-            meshMaterials.push(object.material);
-          }
-        }
-      });
-      // Store initial colors
-      const initialColors = meshMaterials.map(mat => mat.color ? mat.color.clone() : null);
-      const initialEmissions = meshMaterials.map(mat => mat.emissive ? mat.emissive.clone() : null);
-      function animateTheme(ts: number) {
-        if (!start) start = ts;
-        let t = Math.min((ts - start) / duration, 1);
-        meshMaterials.forEach((mat, i) => {
-          if (mat.color && initialColors[i]) {
-            mat.color.lerpColors(initialColors[i], targetColor, t);
-            mat.needsUpdate = true;
-          }
-          if (mat.emissive && initialEmissions[i]) {
-            mat.emissive.lerpColors(initialEmissions[i], targetEmission, t);
-            mat.needsUpdate = true;
-          }
-        });
-        if (t < 1) {
-          requestAnimationFrame(animateTheme);
-        }
-      }
-      requestAnimationFrame(animateTheme);
-    }
-    window.setThreeDTheme = setThreeDTheme;
-    return () => {
-      if (window.setThreeDTheme === setThreeDTheme) {
-        window.setThreeDTheme = undefined;
-      }
-    };
-  }, [selectedModel]);
-
   return (
     <div
       style={{

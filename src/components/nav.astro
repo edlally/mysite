@@ -27,7 +27,7 @@ const navItems: NavItem[] = [
 <div class="flex justify-center w-full">
   <nav
     id="main-nav"
-    class="fixed left-1/2 -translate-x-1/2 z-[100] bg-[var(--background)] border border-1 border-transparent backdrop-blur-xl transition-all duration-500 ease-in-out md:top-6 md:bottom-auto bottom-0 w-[80%]"
+    class="fixed left-1/2 -translate-x-1/2 z-[100] bg-transparent border border-1 border-[#ffffff10] backdrop-blur-xl transition-all duration-500 ease-in-out md:top-6 md:bottom-auto bottom-0 w-[80%] rounded-full"
   >
     <div class="container mx-auto flex justify-center items-center p-3">
       <ul
@@ -57,15 +57,13 @@ const navItems: NavItem[] = [
 <style>
   nav {
     transform: translateX(-50%);
-    background-color: var(--background);
+    background-color: transparent;
     transition:
-      background-color 0.3s ease,
       border-radius 0.3s ease,
       border-color 0.3s ease;
   }
 
   nav.scrolling {
-    background-color: var(--component-bg);
     border-color: #ffffff10;
     border-radius: 9999px;
   }
@@ -88,29 +86,16 @@ const navItems: NavItem[] = [
       position: fixed;
       border-radius: 1rem 1rem 0 0;
       border-color: #ffffff10;
+      background-color: transparent;
     }
 
     nav.scrolling {
       border-radius: 1rem 1rem 0 0;
-      background-color: var(--component-bg);
     }
 
     body {
       padding-bottom: 70px;
     }
-  }
-
-  .red-theme nav#main-nav,
-  .red-theme nav#main-nav *,
-  .red-theme nav#main-nav a,
-  .red-theme nav#main-nav .nav-indicator {
-    background-color: var(--background) !important;
-    border-color: #ffffff10 !important;
-    color: var(--white-icon) !important;
-    transition: none !important;
-  }
-  .red-theme nav#main-nav a.active {
-    color: #FCFFF2 !important;
   }
 </style>
 

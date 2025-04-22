@@ -1,11 +1,5 @@
 'use client';
 
-declare global {
-  interface Window {
-    setThreeDTheme?: (opts: { color?: string; emission?: string }) => void;
-  }
-}
-
 import { useRef, useEffect, useState, useCallback } from "react";
 import * as THREE from "three";
 import { GLTFLoader } from "three/examples/jsm/loaders/GLTFLoader.js";
@@ -392,48 +386,6 @@ const ThreeDBackground = () => {
       }, 100);
     };
     window.addEventListener("resize", handleResize, { passive: true });
-
-    // Theme switching
-    window.setThreeDTheme = function({ color, emission }) {
-      if (!modelRef.current) return;
-      const targetColor = new THREE.Color(color || '#CCFF00');
-      const targetEmission = new THREE.Color(emission || '#CCFF00');
-      let start = null;
-      let duration = 1000;
-      let meshMaterials = [];
-      
-      modelRef.current.traverse((object) => {
-        if (object instanceof THREE.Mesh && object.material) {
-          if (Array.isArray(object.material)) {
-            object.material.forEach((mat) => meshMaterials.push(mat));
-          } else {
-            meshMaterials.push(object.material);
-          }
-        }
-      });
-      
-      const initialColors = meshMaterials.map(mat => mat.color ? mat.color.clone() : null);
-      const initialEmissions = meshMaterials.map(mat => mat.emissive ? mat.emissive.clone() : null);
-      
-      function animateTheme(ts) {
-        if (!start) start = ts;
-        let t = Math.min((ts - start) / duration, 1);
-        meshMaterials.forEach((mat, i) => {
-          if (mat.color && initialColors[i]) {
-            mat.color.lerpColors(initialColors[i], targetColor, t);
-            mat.needsUpdate = true;
-          }
-          if (mat.emissive && initialEmissions[i]) {
-            mat.emissive.lerpColors(initialEmissions[i], targetEmission, t);
-            mat.needsUpdate = true;
-          }
-        });
-        if (t < 1) {
-          requestAnimationFrame(animateTheme);
-        }
-      }
-      requestAnimationFrame(animateTheme);
-    };
 
     // Check model visibility
     const checkVisibility = () => {
