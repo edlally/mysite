@@ -176,6 +176,50 @@
                 width: 100%;
             }
 
+            /* Debug Panel Styles */
+            .debug-panel {
+                position: fixed;
+                top: 10px;
+                left: 10px;
+                background-color: rgba(0, 0, 0, 0.7);
+                border: 1px solid #333;
+                border-radius: 5px;
+                padding: 10px;
+                z-index: 1000;
+                font-family: Arial, sans-serif;
+                color: #fff;
+                width: 160px;
+            }
+
+            .debug-panel h3 {
+                margin-top: 0;
+                margin-bottom: 10px;
+                font-size: 14px;
+                text-align: center;
+            }
+
+            .debug-panel select {
+                width: 100%;
+                padding: 5px;
+                margin-bottom: 10px;
+                background-color: #222;
+                color: #fff;
+                border: 1px solid #444;
+            }
+
+            .debug-panel button {
+                width: 100%;
+                padding: 5px;
+                background-color: #333;
+                color: #fff;
+                border: 1px solid #555;
+                cursor: pointer;
+            }
+
+            .debug-panel button:hover {
+                background-color: #444;
+            }
+
             @keyframes promo-appear-animation {
                 0% {
                     transform: scale(2.0);
@@ -195,7 +239,19 @@
         <script async src="https://www.google-analytics.com/analytics.js"></script>
     </head>
     <body>
-        <canvas></canvas>
+        <canvas id="fluid-simulation"></canvas>
+
+        <!-- Debug Panel for switching fluid simulation modes -->
+        <div class="debug-panel">
+            <h3>Debug Panel</h3>
+            <select id="simulation-mode">
+                <option value="script.js" selected>Default</option>
+                <option value="dithered_fluid.js">Dithered Fluid</option>
+                <option value="smoke_background.js">Smoke Background</option>
+                <option value="BACKUP.JS">Backup Mode</option>
+            </select>
+            <button id="apply-mode">Apply</button>
+        </div>
 
         <!-- Mother of God, pls forgive me -->
         <div class="promo">
@@ -219,6 +275,32 @@
             </div>
         </div>
 
-        <script src="./script.js"></script>
+        <script>
+            // Get the current script from localStorage or use default
+            const currentScript = localStorage.getItem('fluidSimulationScript') || 'script.js';
+            
+            // Set the selected option in the dropdown
+            document.addEventListener('DOMContentLoaded', () => {
+                const selectElement = document.getElementById('simulation-mode');
+                if (selectElement) {
+                    selectElement.value = currentScript;
+                }
+            });
+            
+            // Apply button click handler
+            document.getElementById('apply-mode').addEventListener('click', () => {
+                const selectedScript = document.getElementById('simulation-mode').value;
+                localStorage.setItem('fluidSimulationScript', selectedScript);
+                location.reload();
+            });
+        </script>
+
+        <!-- Load the selected script dynamically -->
+        <script>
+            // Create and append the selected script to the document
+            const scriptElement = document.createElement('script');
+            scriptElement.src = `./${currentScript}`;
+            document.body.appendChild(scriptElement);
+        </script>
     </body>
 </html>

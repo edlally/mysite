@@ -3,6 +3,19 @@ import LogoWall from "../components/logoWall.astro";
 import SkillsList from "../React/SkillsList.tsx";
 ---
 
+<!-- Fluid Simulation Debug Panel -->
+<div class="debug-panel" id="debug-panel">
+  <h3>Fluid Background</h3>
+  <select id="simulation-mode">
+      <option value="script.js" selected>Default</option>
+      <option value="dithered_fluid.js">Dithered Fluid</option>
+      <option value="smoke_background.js">Smoke Background</option>
+      <option value="ink_fluid.js">Ink Fluid</option>
+      <option value="BACKUP.JS">Backup Mode</option>
+  </select>
+  <button id="apply-mode">Apply</button>
+</div>
+
 <section class="text-[var(--white)] mt-12 md:mt-0 relative z-10" id="home">
   <div class="max-w-5xl mx-auto space-y-8 md:py-36 pb-14">
     <div class="text-left space-y-4">
@@ -11,316 +24,16 @@ import SkillsList from "../React/SkillsList.tsx";
       </p>
       <div 
         id="title-container" 
-        class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 md:gap-4 perspective-[800px]"
+        class="flex flex-col lg:flex-row lg:items-center space-y-4 lg:space-y-0 lg:space-x-8 md:gap-4"
       >
         <h1 class="text-[var(--white)] text-5xl md:text-6xl font-medium text-pretty leading-none">
-          <span class="md:hidden">Blender</span>
-          <span class="hidden md:inline">Blender</span>
-          <span
-            id="text-3d"
-            class="inline-block"
-            style="
-              transform: perspective(600px) rotateX(0deg) rotateY(0deg) translateZ(0px);
-              transform-style: preserve-3d;
-              transition: all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1);
-              text-shadow: none;
-              color: var(--white);
-              letter-spacing: 0.03em;
-              -webkit-text-stroke: 1px rgba(252, 255, 242, 0.5);
-              filter: none;
-            "
-          >
-            3D
-          </span><br class="md:hidden"/>
           Artist & Developer
         </h1>
         <p class="text-md md:text-2xl text-[var(--white-icon)]">
-          Creating powerful visual experiences using technical Blender workflows and Python scripting.
+          Creating powerful visual experiences using technical workflows and Python scripting.
           <span class="text-[var(--sec)] shiny-sec">Epicly.</span>
         </p>
       </div>
-      
-      <script is:inline>
-        document.addEventListener('DOMContentLoaded', () => {
-          if (window.__home3d_initialized) return;
-          window.__home3d_initialized = true;
-
-          // Elements
-          const container = document.getElementById('title-container');
-          const text3d = document.getElementById('text-3d');
-          
-          if (!container || !text3d) return;
-
-          // State variables
-          let currentRotX = 0;
-          let currentRotY = 0;
-          let currentZOffset = 0;
-          let targetRotX = 0;
-          let targetRotY = 0;
-          let targetZOffset = 0;
-
-          let animationFrameId = null;
-          let isTabVisible = true;
-          let isHovered = false;
-          let isSectionVisible = true; // Track if section is in viewport
-
-          // Constants
-          const SPRING_STRENGTH = 0.08;
-          const RETURN_SPRING_STRENGTH = 0.03;
-          const MOVE_THROTTLE = 1000 / 60; // 60fps
-
-          // Add intersection observer to detect when section is in viewport
-          const homeSection = document.getElementById('home');
-          if (homeSection && 'IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-              entries.forEach(entry => {
-                isSectionVisible = entry.isIntersecting;
-                
-                // If section becomes visible, restart animation if needed
-                if (isSectionVisible && shouldAnimate() && !animationFrameId) {
-                  startAnimation();
-                }
-                
-                // If section is no longer visible, cancel any running animations to save CPU
-                if (!isSectionVisible && animationFrameId) {
-                  cancelAnimationFrame(animationFrameId);
-                  animationFrameId = null;
-                }
-              });
-            }, {
-              rootMargin: '0px',
-              threshold: 0.1 // Trigger when at least 10% of the section is visible
-            });
-            
-            observer.observe(homeSection);
-          }
-
-          // Helper Functions
-          function startAnimation() {
-            if (!animationFrameId && isTabVisible && isSectionVisible) {
-                animationFrameId = requestAnimationFrame(updateAnimation);
-            }
-          }
-
-          function shouldAnimate() {
-            // Use stricter thresholds to determine if animation is truly needed
-            const isAtRestThreshold = 0.05; // Smaller threshold for determining "at rest"
-            const isAtBasePosition = Math.abs(currentRotX) < isAtRestThreshold && 
-                                    Math.abs(currentRotY) < isAtRestThreshold && 
-                                    Math.abs(currentZOffset) < isAtRestThreshold;
-                                    
-            // Check if we're actually moving significantly
-            const isMoving = Math.abs(targetRotX - currentRotX) > isAtRestThreshold || 
-                           Math.abs(targetRotY - currentRotY) > isAtRestThreshold ||
-                           Math.abs(targetZOffset - currentZOffset) > isAtRestThreshold;
-                           
-            // Only animate when really necessary
-            return (isHovered || (!isAtBasePosition && isMoving)) && isSectionVisible;
-          }
-
-          function updateAnimation() {
-            if (!isTabVisible || !isSectionVisible) {
-              animationFrameId = null;
-              return;
-            }
-            
-            // Calculate spring physics
-            const diffX = targetRotX - currentRotX;
-            const diffY = targetRotY - currentRotY;
-            const diffZ = targetZOffset - currentZOffset;
-            
-            // Apply spring strength based on state
-            const strengthX = isHovered ? SPRING_STRENGTH : RETURN_SPRING_STRENGTH;
-            const strengthY = isHovered ? SPRING_STRENGTH : RETURN_SPRING_STRENGTH;
-            
-            // Apply physics
-            currentRotX += diffX * strengthX;
-            currentRotY += diffY * strengthY;
-            currentZOffset += diffZ * RETURN_SPRING_STRENGTH;
-            
-            // Apply friction to ongoing motion
-            if (!isHovered) {
-              targetRotX *= 0.97;
-              targetRotY *= 0.97;
-            }
-            
-            // Only snap to target when very close
-            if (Math.abs(diffX) < 0.01) currentRotX = targetRotX;
-            if (Math.abs(diffY) < 0.01) currentRotY = targetRotY;
-            if (Math.abs(diffZ) < 0.01) currentZOffset = targetZOffset;
-
-            // Store transforms in local variables to reduce multiple calculations
-            const rX = `${currentRotX.toFixed(2)}deg`;
-            const rY = `${currentRotY.toFixed(2)}deg`;
-            const zOffset = `${currentZOffset.toFixed(2)}px`;
-
-            // Use single DOM update to set transforms
-            text3d.style.transform = `perspective(600px) rotateX(${rX}) rotateY(${rY}) translateZ(${zOffset})`;
-
-            // Apply shadows based on rotation only when necessary
-            const isAtBasePosition = Math.abs(currentRotX) < 0.1 && Math.abs(currentRotY) < 0.1;
-            
-            // Only update styles if they actually changed
-            if (isAtBasePosition) {
-              if (text3d.style.textShadow !== 'none') {
-                text3d.style.textShadow = 'none';
-                text3d.style.filter = 'none';
-              }
-            } else {
-              // Get accent color and apply dynamic shadow - cache this computation
-              if (!window.accentRgbColor) {
-                const accentColor = getComputedStyle(document.documentElement).getPropertyValue('--sec').trim();
-                window.accentRgbColor = hexToRgb(accentColor);
-              }
-              const rgbColor = window.accentRgbColor;
-              
-              const maxShadowOffset = 5;
-              const shadowX = Math.max(-maxShadowOffset, Math.min(maxShadowOffset, currentRotY / 3));
-              const shadowY = Math.max(-maxShadowOffset, Math.min(maxShadowOffset, -currentRotX / 3));
-              const shadowBlur = 4 + Math.min(6, currentZOffset / 3);
-              const shadowOpacity = 0.15 + Math.min(0.3, (currentZOffset / 20) * 0.3);
-              
-              const newShadow = `
-                ${-shadowX}px ${-shadowY}px ${shadowBlur}px rgba(${rgbColor}, ${shadowOpacity}),
-                ${-shadowX * 1.5}px ${-shadowY * 1.5}px ${shadowBlur * 1.5}px rgba(${rgbColor}, ${shadowOpacity / 3}),
-                0 0 1px rgba(252, 255, 242, 0.3)
-              `;
-              
-              const newFilter = `drop-shadow(0 0 0.5px rgba(${rgbColor}, 0.7))`;
-              
-              // Only update DOM when the values actually change
-              if (text3d.style.textShadow !== newShadow) {
-                text3d.style.textShadow = newShadow;
-                text3d.style.filter = newFilter;
-              }
-            }
-
-            // Continue animation if still needed
-            if (shouldAnimate()) {
-              if (window.requestIdleCallback) {
-                // Cancel existing animation frame to prevent duplicates
-                if (animationFrameId) {
-                  cancelAnimationFrame(animationFrameId);
-                }
-                window.requestIdleCallback(() => {
-                  animationFrameId = requestAnimationFrame(updateAnimation);
-                }, { timeout: 16 }); // Equivalent to 60fps timeout
-              } else {
-                animationFrameId = requestAnimationFrame(updateAnimation);
-              }
-            } else {
-              // Explicitly cancel animation and clean up
-              animationFrameId = null;
-              
-              // Make sure we're exactly at target values to prevent visual artifacts
-              if (!isHovered) {
-                currentRotX = targetRotX = 0;
-                currentRotY = targetRotY = 0;
-                currentZOffset = targetZOffset = 0;
-                
-                // Force final render state - single DOM update
-                text3d.style.transform = 'perspective(600px) rotateX(0deg) rotateY(0deg) translateZ(0px)';
-                text3d.style.textShadow = 'none';
-                text3d.style.filter = 'none';
-              }
-            }
-          }
-
-          // Convert hex color to RGB format
-          function hexToRgb(hex) {
-            hex = hex.replace(/^#/, '');
-            const bigint = parseInt(hex, 16);
-            const r = (bigint >> 16) & 255;
-            const g = (bigint >> 8) & 255;
-            const b = bigint & 255;
-            return `${r}, ${g}, ${b}`;
-          }
-
-          // Mouse Event Handlers
-          let lastMove = 0;
-          
-          function onMouseMove(e) {
-            const now = performance.now();
-            // Increase throttle threshold to reduce the number of calculations
-            if (now - lastMove < MOVE_THROTTLE * 1.5) return;
-            lastMove = now;
-            
-            const { left, top, width, height } = container.getBoundingClientRect();
-            const x = e.clientX - (left + width / 2);
-            const y = e.clientY - (top + height / 2);
-            
-            targetRotY = (x / (width / 2)) * 30;
-            targetRotX = -(y / (height / 2)) * 30;
-            
-            const distance = Math.sqrt(x*x + y*y);
-            const maxDistance = Math.sqrt((width/2)*(width/2) + (height/2)*(height/2));
-            targetZOffset = (distance / maxDistance) * 20;
-            
-            startAnimation();
-          }
-
-          function onMouseEnter() {
-            isHovered = true;
-            startAnimation();
-          }
-
-          function onMouseLeave() {
-            isHovered = false;
-            targetRotX = 0;
-            targetRotY = 0;
-            targetZOffset = 0;
-            startAnimation();
-          }
-
-          // Set up visibility change handler
-          function handleVisibilityChange() {
-            isTabVisible = !document.hidden;
-            
-            if (!isTabVisible) {
-              document.removeEventListener('mousemove', onMouseMove);
-              document.removeEventListener('mouseenter', onMouseEnter);
-              document.removeEventListener('mouseleave', onMouseLeave);
-              
-              if (animationFrameId) {
-                cancelAnimationFrame(animationFrameId);
-                animationFrameId = null;
-              }
-            } else {
-              // Re-add event listeners
-              container.addEventListener('mousemove', onMouseMove, { passive: true });
-              container.addEventListener('mouseenter', onMouseEnter, { passive: true });
-              container.addEventListener('mouseleave', onMouseLeave, { passive: true });
-              
-              // Restart animation if needed
-              if (shouldAnimate() && !animationFrameId) {
-                startAnimation();
-              }
-            }
-          }
-
-          // Add event listeners
-          container.addEventListener('mousemove', onMouseMove, { passive: true });
-          container.addEventListener('mouseenter', onMouseEnter, { passive: true });
-          container.addEventListener('mouseleave', onMouseLeave, { passive: true });
-          document.addEventListener('visibilitychange', handleVisibilityChange);
-
-          // Cleanup function
-          const cleanup = () => {
-            if (animationFrameId) {
-              cancelAnimationFrame(animationFrameId);
-            }
-            
-            document.removeEventListener('visibilitychange', handleVisibilityChange);
-            container.removeEventListener('mousemove', onMouseMove);
-            container.removeEventListener('mouseenter', onMouseEnter);
-            container.removeEventListener('mouseleave', onMouseLeave);
-            
-            window.__home3d_initialized = false;
-          };
-
-          window.addEventListener('beforeunload', cleanup);
-        });
-      </script>
       
       <div class="flex justify-start gap-2 pt-3 md:pt-6">
         <a
@@ -410,6 +123,51 @@ import SkillsList from "../React/SkillsList.tsx";
     animation: shine 3s linear infinite;
   }
 
+  /* Debug Panel Styles */
+  .debug-panel {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    background-color: rgba(0, 0, 0, 0.7);
+    border: 1px solid #333;
+    border-radius: 5px;
+    padding: 10px;
+    z-index: 1000;
+    font-family: Arial, sans-serif;
+    color: #fff;
+    width: 160px;
+    display: none; /* Hidden by default */
+  }
+
+  .debug-panel h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    font-size: 14px;
+    text-align: center;
+  }
+
+  .debug-panel select {
+    width: 100%;
+    padding: 5px;
+    margin-bottom: 10px;
+    background-color: #222;
+    color: #fff;
+    border: 1px solid #444;
+  }
+
+  .debug-panel button {
+    width: 100%;
+    padding: 5px;
+    background-color: #333;
+    color: #fff;
+    border: 1px solid #555;
+    cursor: pointer;
+  }
+
+  .debug-panel button:hover {
+    background-color: #444;
+  }
+
   @keyframes shine {
     0% {
       background-position: 100% 50%;
@@ -419,25 +177,38 @@ import SkillsList from "../React/SkillsList.tsx";
       background-position: 0% 50%;
     }
   }
-
-  #text-3d {
-    position: relative;
-    display: inline-block;
-    font-weight: bold;
-    user-select: none;
-    touch-action: none;
-    overflow: visible;
-    transform-style: preserve-3d;
-  }
-  
-  #text-3d::before {
-    content: "3D";
-    position: absolute;
-    top: 0;
-    left: 0;
-    z-index: -1;
-    color: rgba(var(--sec-rgb), 0);
-    transform: translateZ(-3px);
-    filter: blur(1.5px);
-  }
 </style>
+
+<script>
+  // Get the current script from localStorage or use default
+  const currentScript = localStorage.getItem('fluidSimulationScript') || 'script.js';
+  
+  // Set the selected option in the dropdown
+  document.addEventListener('DOMContentLoaded', () => {
+    const selectElement = document.getElementById('simulation-mode') as HTMLSelectElement;
+    if (selectElement) {
+      selectElement.value = currentScript;
+    }
+    
+    // Add keyboard shortcut listener for Alt+Shift+D
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey && e.shiftKey && e.key === 'D') {
+        const debugPanel = document.getElementById('debug-panel');
+        if (debugPanel) {
+          // Toggle the debug panel visibility
+          debugPanel.style.display = debugPanel.style.display === 'none' || !debugPanel.style.display ? 'block' : 'none';
+        }
+      }
+    });
+  });
+  
+  // Apply button click handler
+  document.getElementById('apply-mode')?.addEventListener('click', () => {
+    const selectElement = document.getElementById('simulation-mode') as HTMLSelectElement;
+    if (selectElement) {
+      const selectedScript = selectElement.value;
+      localStorage.setItem('fluidSimulationScript', selectedScript);
+      location.reload();
+    }
+  });
+</script>

@@ -31,6 +31,9 @@
 
   // Load the fluid simulation scripts
   document.addEventListener('DOMContentLoaded', () => {
+    // Get the selected script from localStorage or use default
+    const selectedScript = localStorage.getItem('fluidSimulationScript') || 'script.js';
+    
     // Load the dependencies
     const datGuiScript = document.createElement('script');
     datGuiScript.src = '/webgl-fluid-simulation/dat.gui.min.js';
@@ -55,9 +58,9 @@
       interactionScript.src = '/fluid-interaction.js';
       document.head.appendChild(interactionScript);
 
-      // Load the main script
+      // Load the main script (selected by user or default)
       const fluidScript = document.createElement('script');
-      fluidScript.src = '/webgl-fluid-simulation/script.js';
+      fluidScript.src = `/webgl-fluid-simulation/${selectedScript}`;
       
       // After script loads, create some initial splats
       fluidScript.onload = () => {
