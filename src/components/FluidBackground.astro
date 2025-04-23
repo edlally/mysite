@@ -24,10 +24,19 @@
 
   // Create a random splat when the page loads to start the animation
   function createRandomSplat() {
-    if (window.multipleSplats) {
+    if (window.multipleSplats && !document.hidden) {
       window.multipleSplats(Math.random() * 3 + 2);
     }
   }
+
+  // Visibility state variable
+  let isPageVisible = !document.hidden;
+  
+  // Handle visibility change
+  document.addEventListener('visibilitychange', () => {
+    isPageVisible = !document.hidden;
+    console.log('Page visibility changed:', isPageVisible ? 'visible' : 'hidden');
+  });
 
   // Load the fluid simulation scripts
   document.addEventListener('DOMContentLoaded', () => {
@@ -53,6 +62,11 @@
       bridgeScript.src = '/fluid-bridge.js';
       document.head.appendChild(bridgeScript);
 
+      // Load the visibility controller
+      const visibilityScript = document.createElement('script');
+      visibilityScript.src = '/fluid-visibility.js';
+      document.head.appendChild(visibilityScript);
+
       // Load the interaction script
       const interactionScript = document.createElement('script');
       interactionScript.src = '/fluid-interaction.js';
@@ -65,10 +79,17 @@
       // After script loads, create some initial splats
       fluidScript.onload = () => {
         setTimeout(() => {
-          createRandomSplat();
+          if (isPageVisible) {
+            createRandomSplat();
+          }
           
           // Create a splat every few seconds to keep the animation going
-          setInterval(createRandomSplat, 6000);
+          // but only when the page is visible
+          setInterval(() => {
+            if (isPageVisible) {
+              createRandomSplat();
+            }
+          }, 6000);
         }, 1000);
       };
       

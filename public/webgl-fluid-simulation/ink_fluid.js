@@ -156,13 +156,13 @@ let config = {
   DYE_RESOLUTION: 1024,
   CAPTURE_RESOLUTION: 512,
   DENSITY_DISSIPATION: 0.0,
-  VELOCITY_DISSIPATION: 0.0,
+  VELOCITY_DISSIPATION: 0,
   PRESSURE: 0.6,
   PRESSURE_ITERATIONS: 40,
-  CURL: 0,
+  CURL: 1,
   SPLAT_RADIUS: 0.25,
   SPLAT_FORCE: 6000,
-  SPLAT_VELOCITY: 100000,
+  SPLAT_VELOCITY: 10,
   VISCOSITY: 10,
   ELASTIC_FORCE: 0.8,
   SURFACE_TENSION: 0.9,
@@ -186,7 +186,11 @@ let config = {
   SUNRAYS_WEIGHT: 0.2,
   PEARLESCENT: true,
   PEARLESCENT_INTENSITY: 1,
-  SPECULAR_INTENSITY: 0.5,
+  SPECULAR_INTENSITY: 0.4,
+  GLITTER: true,
+  GLITTER_INTENSITY: 1,
+  GLITTER_SCALE: 50,
+  GLITTER_SPEED: 0.2,
 };
 
   
@@ -370,6 +374,15 @@ function startGUI () {
         pearlescentFolder.add(config, 'PEARLESCENT').name('enabled').onFinishChange(updateKeywords);
         pearlescentFolder.add(config, 'PEARLESCENT_INTENSITY', 0.1, 1.0).name('intensity');
         pearlescentFolder.add(config, 'SPECULAR_INTENSITY', 0.0, 1.0).name('specular intensity');
+        
+        // Add Glitter effect controls (as a sub-folder of Pearlescent)
+        let glitterFolder = pearlescentFolder.addFolder('Glitter Effect');
+        glitterFolder.add(config, 'GLITTER').name('enabled').onFinishChange(updateKeywords);
+        glitterFolder.add(config, 'GLITTER_INTENSITY', 0.1, 1.0).name('intensity');
+        glitterFolder.add(config, 'GLITTER_SCALE', 10.0, 50.0).name('scale');
+        glitterFolder.add(config, 'GLITTER_SPEED', 0.05, 1.0).name('speed');
+        glitterFolder.open(); // Open by default
+        
         pearlescentFolder.open(); // Open by default to highlight the new feature
 
         let captureFolder = gui.addFolder('Capture');
@@ -709,6 +722,12 @@ const displayShaderSource = `
     // Add specular intensity uniform
     uniform float specularIntensity;
     uniform float pearlescentIntensity;
+    
+    // Add glitter uniforms
+    uniform float glitterIntensity;
+    uniform float glitterScale;
+    uniform float glitterSpeed;
+    uniform float time; // For glitter animation
 
     vec3 linearToGamma (vec3 color) {
         color = max(color, vec3(0));
@@ -769,6 +788,34 @@ const displayShaderSource = `
             // For high-definition look, add specular-like highlight with adjustable intensity
             float specularHighlight = pow(brightness, 4.0) * specularIntensity;
             pearlColor += specularHighlight;
+            
+            #ifdef GLITTER
+                // Generate glitter effect using noise patterns
+                // Use UV coordinates and time to animate the glitter
+                vec2 glitterUV = vUv * glitterScale;
+                
+                // Create animated noise by offsetting UV coords with time
+                float t = time * glitterSpeed;
+                
+                // Create high-frequency noise patterns for the sparkle effect
+                float noise1 = fract(sin(dot(glitterUV + t, vec2(12.9898, 78.233))) * 43758.5453);
+                float noise2 = fract(sin(dot(glitterUV + t * 0.7, vec2(39.7479, 29.1349))) * 43758.5453);
+                
+                // Make glitter more sparse by applying threshold
+                float glitterThreshold = 0.5 + 0.15 * brightness; // Lower threshold to make glitter appear in more areas
+                float glitter = step(glitterThreshold, noise1) * step(glitterThreshold, noise2);
+                
+                // Scale glitter by intensity and brightness to make it appear mainly in highlights
+                // But exclude very bright (white) areas by applying an upper brightness threshold
+                float brightnessCap = smoothstep(0.0, 0.7, brightness) * (1.0 - smoothstep(0.7, 0.9, brightness));
+                float glitterFactor = glitter * glitterIntensity * brightness * brightnessCap;
+                
+                // Create glitter color (white with a hint of the underlying pearl color)
+                vec3 glitterColor = mix(vec3(1.0), pearlColor, 0.3);
+                
+                // Add glitter to the pearl color
+                pearlColor = mix(pearlColor, glitterColor, glitterFactor);
+            #endif
             
             // Mix the original color with the pearlescent effect
             // Ensure brighter areas get more of the effect
@@ -1528,6 +1575,7 @@ function updateKeywords () {
     if (config.BLOOM) displayKeywords.push("BLOOM");
     if (config.SUNRAYS) displayKeywords.push("SUNRAYS");
     if (config.PEARLESCENT) displayKeywords.push("PEARLESCENT");
+    if (config.GLITTER && config.PEARLESCENT) displayKeywords.push("GLITTER");
     displayMaterial.setKeywords(displayKeywords);
 }
 
@@ -1566,7 +1614,7 @@ function initialGreyscaleSplats() {
         
         // Create a large central splash with slightly randomized size (using splat radius)
         const originalRadius = config.SPLAT_RADIUS;
-        config.SPLAT_RADIUS = 0.3 + Math.random() * 0.15; // Large blob
+        config.SPLAT_RADIUS = 0.6 + Math.random() * 0.15; // Large blob
         
         // Create main blob
         splat(x, y, 0, 0, {
@@ -2007,6 +2055,13 @@ function drawDisplay (target) {
     if (config.PEARLESCENT) {
         gl.uniform1f(displayMaterial.uniforms.pearlescentIntensity, config.PEARLESCENT_INTENSITY);
         gl.uniform1f(displayMaterial.uniforms.specularIntensity, config.SPECULAR_INTENSITY);
+        
+        if (config.GLITTER) {
+            gl.uniform1f(displayMaterial.uniforms.glitterIntensity, config.GLITTER_INTENSITY);
+            gl.uniform1f(displayMaterial.uniforms.glitterScale, config.GLITTER_SCALE);
+            gl.uniform1f(displayMaterial.uniforms.glitterSpeed, config.GLITTER_SPEED);
+            gl.uniform1f(displayMaterial.uniforms.time, performance.now() / 1000.0);
+        }
     }
     blit(target);
 }

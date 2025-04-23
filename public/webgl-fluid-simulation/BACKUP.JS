@@ -51,7 +51,7 @@ const AUDIO = {
     THRESHOLD: 0.12,         // Minimum amplitude to trigger a reaction (lower for Flume)
     SMOOTHING: 0.8,          // How much to smooth the frequency data
     AUTO_KICK: false,        // Generate periodic kicks when no strong bass is detected
-    AUDIO_FILE: '../audio/Flume_-_All_There_1.9_2019_Export_Wav.mp3', // Path to audio file
+    AUDIO_FILE: '../audio/dead_prez_-_Hip_Hop_Digital_Video.mp3', // Path to audio file
     KICK_DETECTION: {
         ENABLED: true,
         THRESHOLD: 0.22,     // Energy threshold to detect a kick (lower for Flume)
